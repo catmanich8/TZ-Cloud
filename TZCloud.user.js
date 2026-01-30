@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         SEO Subdomain Automation Suite v4.5.3 - Universal Task Types
+// @name         SEO Subdomain Automation Suite v4.5.4 - Universal Task Types
 // @namespace    http://tampermonkey.net/
-// @version      4.5.3
-// @description  v4.5.3 - Дефолтный Google Apps Script URL + авторизация для облака
+// @version      4.5.4
+// @description  v4.5.4 - Дефолтный Google Apps Script URL + авторизация для облака
 // @author       Timur - Head of Automation
 // @match        https://app.asana.com/*
 // @match        https://best-seo-crm.top/*
