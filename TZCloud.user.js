@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         SEO Subdomain Automation Suite v4.5.4 - Universal Task Types
+// @name         SEO Subdomain Automation Suite v4.5.5 - Universal Task Types
 // @namespace    http://tampermonkey.net/
-// @version      4.5.4
-// @description  v4.5.4 - Дефолтный Google Apps Script URL + авторизация для облака
+// @version      4.5.5
+// @description  v4.5.5 - Фоновый режим, прогресс-бар, retry, улучшенные логи
 // @author       Timur - Head of Automation
 // @match        https://app.asana.com/*
 // @match        https://best-seo-crm.top/*
@@ -17,6 +17,8 @@
 // @connect      app.asana.com
 // @connect      api.asana.com
 // @connect      seo-team.top
+// @connect      script.google.com
+// @connect      script.googleusercontent.com
 // @connect      *
 // ==/UserScript==
 
@@ -26,7 +28,7 @@
     // ===== DEBUG РЕЖИМ =====
     const DEBUG = false;
     const PROFILE = false; // v4.5.2 диагностика производительности // v4.3.3: Включите true для отладки
-    
+
     // v4.3.7: УНИВЕРСАЛЬНОЕ ПРАВИЛО - блокируем всплытие событий клавиатуры в shadowRoot
     // Вызывать после создания shadowRoot для предотвращения перехвата событий сайтом Asana
     function preventKeyboardEventBubbling(shadowRoot) {
@@ -38,7 +40,7 @@
             }, true);  // capture phase для раннего перехвата
         });
     }
-    
+
     // Отладка: вывод базы при загрузке
     setTimeout(() => {
         if (DEBUG) {
@@ -76,16 +78,16 @@
             `;
             document.body.appendChild(container);
         }
-        
+
         const toast = document.createElement('div');
         const icons = { success: '✅', error: '❌', warning: '⚠️', info: '📋' };
-        const colors = { 
-            success: '#4CAF50', 
-            error: '#f44336', 
-            warning: '#FF9800', 
-            info: '#2196F3' 
+        const colors = {
+            success: '#4CAF50',
+            error: '#f44336',
+            warning: '#FF9800',
+            info: '#2196F3'
         };
-        
+
         toast.style.cssText = `
             background: ${colors[type] || colors.info};
             color: white;
@@ -100,10 +102,10 @@
             cursor: pointer;
             white-space: pre-line;
         `;
-        
+
         toast.innerHTML = `${icons[type] || icons.info} ${message}`;
         toast.onclick = () => toast.remove();
-        
+
         // Добавляем анимацию
         if (!document.getElementById('seo-toast-styles')) {
             const style = document.createElement('style');
@@ -120,9 +122,9 @@
             `;
             document.head.appendChild(style);
         }
-        
+
         container.appendChild(toast);
-        
+
         // Автоудаление
         setTimeout(() => {
             toast.style.animation = 'toastSlideOut 0.3s ease forwards';
@@ -185,7 +187,7 @@
     // ===== v4.5.3: АВТОРИЗАЦИЯ ДЛЯ ОБЛАЧНЫХ СЕРВИСОВ =====
     // Логин/пароль вводятся пользователем при первом запуске
     // Хранятся в GM_setValue (безопасно для GitHub Pages)
-    
+
     function getCloudAuth() {
         const savedAuth = GM_getValue('cloudAuth', null);
         if (savedAuth) {
@@ -195,34 +197,34 @@
         }
         return null; // Не установлено
     }
-    
+
     function isCloudAuthSet() {
         return getCloudAuth() !== null;
     }
-    
+
     function saveCloudAuth(username, password) {
         GM_setValue('cloudAuth', JSON.stringify({ username, password }));
     }
-    
+
     function validateCloudAuth(username, password) {
         const auth = getCloudAuth();
         if (!auth) return false;
         return auth.username === username && auth.password === password;
     }
-    
+
     function encodeAuthForRequest(username, password) {
         return btoa(username + ':' + password);
     }
-    
+
     // v4.5.3: Модалка первичной настройки credentials
     function showInitialAuthSetup(onComplete) {
         const host = document.createElement('div');
         host.id = 'seo-auth-setup-host';
         document.body.appendChild(host);
-        
+
         const shadow = host.attachShadow({ mode: 'open' });
         preventKeyboardEventBubbling(shadow);
-        
+
         shadow.innerHTML = `
             <style>
                 .auth-overlay {
@@ -307,33 +309,33 @@
                 <div class="auth-modal">
                     <h3 class="auth-title">🔐 Первичная настройка</h3>
                     <p class="auth-subtitle">Установите логин и пароль для облачных сервисов</p>
-                    
+
                     <div class="auth-field">
                         <label>Логин:</label>
                         <input type="text" id="setup-username" placeholder="Введите логин" autocomplete="off" />
                     </div>
-                    
+
                     <div class="auth-field">
                         <label>Пароль:</label>
                         <input type="password" id="setup-password" placeholder="Введите пароль" autocomplete="off" />
                     </div>
-                    
+
                     <div class="auth-error" id="auth-error"></div>
-                    
+
                     <button class="auth-btn" id="setup-save">💾 Сохранить</button>
                 </div>
             </div>
         `;
-        
+
         const usernameInput = shadow.getElementById('setup-username');
         const passwordInput = shadow.getElementById('setup-password');
         const saveBtn = shadow.getElementById('setup-save');
         const errorEl = shadow.getElementById('auth-error');
-        
+
         saveBtn.addEventListener('click', () => {
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            
+
             // Валидация
             if (!username) {
                 errorEl.textContent = '❌ Введите логин';
@@ -345,21 +347,21 @@
                 errorEl.style.display = 'block';
                 return;
             }
-            
+
             // Сохраняем
             saveCloudAuth(username, password);
             host.remove();
             showToast('✅ Авторизация настроена!', 'success');
             if (onComplete) onComplete();
         });
-        
+
         // Enter для сохранения
         [usernameInput, passwordInput].forEach(input => {
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') saveBtn.click();
             });
         });
-        
+
         // Фокус на первое поле
         setTimeout(() => usernameInput.focus(), 100);
     }
@@ -512,7 +514,7 @@
             saveRocketChatMapping(mapping);
             if(DEBUG) console.log(`✅ Автоматически замаплено ${newMappings} пользователей (точное совпадение)`);
         }
-        
+
         const totalMapped = Object.keys(mapping).length;
         if(DEBUG) console.log(`📊 Всего в маппинге: ${totalMapped} пользователей`);
 
@@ -523,17 +525,17 @@
     function syncAsanaRocketMapping() {
         const teamCache = loadTeamMembersFromCache();
         const rocketCache = loadRocketUsersFromCache();
-        
+
         if (!teamCache.data || teamCache.data.length === 0) {
             if(DEBUG) console.log('⏭️ Нет кеша team members, пропускаем синхронизацию маппинга');
             return;
         }
-        
+
         if (!rocketCache.data || rocketCache.data.length === 0) {
             if(DEBUG) console.log('⏭️ Нет кеша Rocket.Chat users, пропускаем синхронизацию маппинга');
             return;
         }
-        
+
         if(DEBUG) console.log(`🔄 Синхронизация маппинга: ${teamCache.data.length} Asana users ↔ ${rocketCache.data.length} Rocket users`);
         const mapping = autoMapAsanaToRocket(teamCache.data, rocketCache.data);
         if(DEBUG) console.log('📊 Текущий маппинг:', mapping);
@@ -588,7 +590,7 @@
             width: 'medium',
             aliases: ['домен', 'domain', 'сайт', 'site', 'drop', 'дроп', 'основной домен', 'currentdomain']
         },
-        
+
         // === Поля для поддоменов ===
         oldSub: {
             id: 'oldSub',
@@ -619,7 +621,7 @@
             variable: '{{alternateDomain}}',
             placeholder: 'alternate.com',
             width: 'medium',
-            aliases: ['домен подмены', 'подмена', 'alternate', 'alt', 'altdomain', 'альт', 'замена']
+            aliases: ['домен подмены', 'подмена', 'alternate', 'alt', 'altdomain', 'alternatedomain', 'альт', 'замена']
         },
         redirect: {
             id: 'redirect',
@@ -643,7 +645,7 @@
             width: 'small',
             aliases: ['hreflang', 'хрефланг', 'geo', 'гео', 'язык', 'lang', 'region', 'регион']
         },
-        
+
         // === Общие поля ===
         priority: {
             id: 'priority',
@@ -703,7 +705,7 @@
             width: 'medium',
             aliases: ['ответственный', 'assignee', 'исполнитель', 'executor', 'owner']
         },
-        
+
         // === Поля для редиректов (будущее) ===
         fromUrl: {
             id: 'fromUrl',
@@ -723,7 +725,7 @@
             width: 'large',
             aliases: ['url куда', 'to url', 'target', 'destination', 'цель']
         },
-        
+
         // === Кастомные текстовые поля ===
         notes: {
             id: 'notes',
@@ -744,9 +746,9 @@
             aliases: ['пинг', 'ping', 'pingrocket', 'уведомление', 'notify']
         }
     };
-    
+
     // ===== v4.5.0: УМНЫЙ ИМПОРТ - сопоставление колонок =====
-    
+
     // Маппинг hreflang geo → templateIndex
     const HREFLANG_GEO_MAP = {
         'ru': 0,
@@ -761,70 +763,68 @@
         'казахстан': 2,
         'универсальный': 2
     };
-    
+
     // Функция сопоставления заголовка колонки с полем
     function matchColumnToField(columnHeader) {
         if (!columnHeader) return null;
         const header = String(columnHeader).toLowerCase().trim();
-        
+
         // Загружаем пользовательские настройки aliases и custom fields
         const userSettings = loadFieldSettings() || {};
         const customFields = userSettings._customFields || [];
-        
+
         // Объединяем все поля
         const allFields = { ...FIELD_REGISTRY };
         customFields.forEach(cf => {
             allFields[cf.id] = cf;
         });
-        
+
         // Проходим по всем полям
         for (const [fieldId, field] of Object.entries(allFields)) {
             // Точное совпадение с label
             if (field.label.toLowerCase() === header) return fieldId;
-            
+
             // Точное совпадение с id
             if (fieldId.toLowerCase() === header) return fieldId;
-            
-            // Сначала проверяем пользовательские aliases
+
+            // Сначала проверяем пользовательские aliases (только точное совпадение)
             const userAliases = userSettings[fieldId]?.aliases;
             if (userAliases && userAliases.length > 0) {
                 for (const alias of userAliases) {
                     if (header === alias.toLowerCase()) return fieldId;
-                    if (header.includes(alias.toLowerCase())) return fieldId;
                 }
             }
-            
-            // Затем проверяем дефолтные aliases
+
+            // Затем проверяем дефолтные aliases (только точное совпадение)
             if (field.aliases) {
                 for (const alias of field.aliases) {
                     if (header === alias.toLowerCase()) return fieldId;
-                    if (header.includes(alias.toLowerCase())) return fieldId;
                 }
             }
         }
-        
+
         return null; // неизвестная колонка
     }
-    
+
     // Функция преобразования значения hreflang geo → templateIndex
     function parseHreflangGeo(value) {
         if (!value) return '';
         const val = String(value).toLowerCase().trim();
-        
+
         // Если это уже число - возвращаем как есть
         if (!isNaN(parseInt(val))) return val;
-        
+
         // Ищем в маппинге
         if (HREFLANG_GEO_MAP.hasOwnProperty(val)) {
             return String(HREFLANG_GEO_MAP[val]);
         }
-        
+
         return ''; // не найдено - пустой (—)
     }
-    
+
     // v4.5.0: Загрузка/сохранение пользовательских настроек полей
     const FIELD_SETTINGS_KEY = 'seo_subdomain_field_settings';
-    
+
     function loadFieldSettings() {
         try {
             const saved = localStorage.getItem(FIELD_SETTINGS_KEY);
@@ -839,7 +839,7 @@
         }
         return null; // используем дефолтные из FIELD_REGISTRY
     }
-    
+
     function saveFieldSettings(settings) {
         try {
             const json = JSON.stringify(settings);
@@ -849,14 +849,14 @@
             console.error('Failed to save field settings:', e);
         }
     }
-    
+
     // Получить поле с учётом пользовательских настроек
     // REVIEW: getFieldConfig - подготовлено для будущего использования в FieldConfigModal
     // Не удалять, может понадобиться для динамической конфигурации полей
     function getFieldConfig(fieldId) {
         const defaultField = FIELD_REGISTRY[fieldId];
         if (!defaultField) return null;
-        
+
         const userSettings = loadFieldSettings();
         if (userSettings && userSettings[fieldId]) {
             return { ...defaultField, ...userSettings[fieldId] };
@@ -1016,7 +1016,7 @@ https://{{alternateDomain}}/
     // REVIEW: getFieldOptions - подготовлено для динамических опций полей
     function getFieldOptions(fieldDef) {
         if (!fieldDef.options) return [];
-        
+
         // Специальные типы опций
         if (fieldDef.options === 'departments') {
             return getDepartmentsList().map(d => ({ value: d, label: d }));
@@ -1024,7 +1024,7 @@ https://{{alternateDomain}}/
         if (fieldDef.options === 'hreflangTemplates') {
             return loadTemplates().map((t, i) => ({ value: String(i), label: t.name }));
         }
-        
+
         // Обычный массив опций
         if (Array.isArray(fieldDef.options)) {
             return fieldDef.options.map(o => {
@@ -1032,7 +1032,7 @@ https://{{alternateDomain}}/
                 return { value: o, label: o };
             });
         }
-        
+
         return [];
     }
 
@@ -1042,12 +1042,12 @@ https://{{alternateDomain}}/
         const taskTypes = loadTaskTypes();
         const schema = taskTypes[taskTypeId];
         if (!schema) return null;
-        
+
         const task = {
             id: taskIdCounter,
             _taskType: taskTypeId
         };
-        
+
         schema.fields.forEach(f => {
             const fieldDef = FIELD_REGISTRY[f.fieldId];
             if (fieldDef) {
@@ -1058,13 +1058,13 @@ https://{{alternateDomain}}/
                 }
             }
         });
-        
+
         // Специальные поля для совместимости со старым кодом
         task.subtasks = [];
         task.redirect301 = true;
         task.redirect404 = false;
         task.templateIndex = '0';
-        
+
         return task;
     }
 
@@ -1179,19 +1179,19 @@ https://{{alternateDomain}}/
         .btn-export:hover { background: #0097A7; }
         .btn-settings-mass { background: #546E7A; color: #fff; }
         .btn-settings-mass:hover { background: #455A64; }
-        
+
         /* v4.5.0: Кнопка сводки */
         .btn-summary { background: #9C27B0; color: #fff; }
         .btn-summary:hover { background: #7B1FA2; }
-        
+
         /* v4.5.0: Кнопка облачного сохранения */
         .btn-cloud { background: #03A9F4; color: #fff; }
         .btn-cloud:hover { background: #0288D1; }
-        
+
         /* v4.5.0: Кнопка типов задач */
         .btn-task-types { background: #607D8B; color: #fff; }
         .btn-task-types:hover { background: #455A64; }
-        
+
         /* v4.5.0: Кнопка настройки полей */
         .btn-field-settings { background: #795548; color: #fff; }
         .btn-field-settings:hover { background: #5D4037; }
@@ -1225,19 +1225,19 @@ https://{{alternateDomain}}/
             top: 0;
             z-index: 100;
         }
-        
+
         .table-header .cell-checkbox-all {
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        
+
         .table-header .cell-checkbox-all input {
             width: 16px;
             height: 16px;
             cursor: pointer;
         }
-        
+
         .required-mark {
             color: #FFD54F;
             margin-left: 2px;
@@ -1281,7 +1281,7 @@ https://{{alternateDomain}}/
             font-weight: 500;
             color: #666;
         }
-        
+
         /* v4.5.2: Wrapper для поля задачи с кнопкой сброса */
         .cell-task-wrapper {
             position: relative;
@@ -1316,7 +1316,7 @@ https://{{alternateDomain}}/
             background: #f44336;
             color: #fff;
         }
-        
+
         .cell-task input, .cell-domain input, .cell-oldsub input, .cell-newsub input {
             width: 100%;
             padding: 8px 10px;
@@ -1364,7 +1364,7 @@ https://{{alternateDomain}}/
             padding-top: 6px;
             position: relative;
         }
-        
+
         .cell-assignee {
             padding-top: 4px;
         }
@@ -1381,7 +1381,7 @@ https://{{alternateDomain}}/
             outline: none;
             border-color: #4CAF50;
         }
-        
+
         /* Ячейка Пинг с тумблером */
         .cell-ping {
             display: flex;
@@ -1389,7 +1389,7 @@ https://{{alternateDomain}}/
             justify-content: center;
             padding-top: 6px;
         }
-        
+
         /* Toggle switch стили */
         .toggle-switch {
             position: relative;
@@ -1444,7 +1444,7 @@ https://{{alternateDomain}}/
             position: relative;
             transition: background 0.2s;
         }
-        
+
         .subtasks-count:hover {
             background: #7B1FA2;
         }
@@ -1453,7 +1453,7 @@ https://{{alternateDomain}}/
             background: #bdbdbd;
             cursor: default;
         }
-        
+
         .subtasks-count.empty:hover {
             background: #bdbdbd;
         }
@@ -1593,7 +1593,7 @@ https://{{alternateDomain}}/
             border: 6px solid transparent;
             border-top-color: #f44336;
         }
-        
+
         /* FIX v4.1.8: Окно сравнения www в массовом режиме */
         .www-popup {
             position: absolute;
@@ -1659,7 +1659,7 @@ https://{{alternateDomain}}/
         .cell-newsub {
             position: relative;
         }
-        
+
         .cell-altdomain input {
             width: 100%;
             padding: 8px 10px;
@@ -1690,6 +1690,12 @@ https://{{alternateDomain}}/
             font-size: 18px;
             font-weight: 600;
             margin: 0;
+            transition: color 0.3s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .close-btn {
@@ -1714,9 +1720,11 @@ https://{{alternateDomain}}/
         }
 
         .dashboard-content {
+            flex: 1;
             padding: 20px;
+            padding-bottom: 20px;
             overflow-y: auto;
-            max-height: calc(90vh - 60px);
+            min-height: 0; /* важно для flex overflow */
             background: #ffffff;
         }
 
@@ -2871,24 +2879,82 @@ https://{{alternateDomain}}/
         .status-log {
             margin-top: 16px;
             padding: 12px;
-            background: #f3f4f6;
+            background: #1a1a2e;
             border-radius: 6px;
             font-size: 12px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #333;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
         .log-title {
             font-weight: 600;
-            margin-bottom: 8px;
-            color: #111827;
+            color: #fff;
+        }
+
+        .log-copy-btn {
+            background: #4a5568;
+            color: #fff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .log-copy-btn:hover { background: #5a6578; }
+        .log-copy-btn.copied { background: #10b981; }
+
+        .log-content {
+            background: #0d0d1a;
+            padding: 8px;
+            border-radius: 4px;
         }
 
         .log-content div {
-            padding: 4px 0;
-            color: #4b5563;
+            padding: 2px 0;
+            color: #a0aec0;
             font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        /* v4.5.5: Глобальный прогресс-бар - всегда внизу панели */
+        .global-progress {
+            flex-shrink: 0;
+            position: relative;
+            height: 32px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+            border-top: 2px solid #4CAF50;
+            border-radius: 0 0 6px 6px;
+        }
+        .global-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 50%, #CDDC39 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 0 0 0 6px;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        .global-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            white-space: nowrap;
+            z-index: 1;
         }
 
         .log-success {
@@ -3920,7 +3986,7 @@ https://{{alternateDomain}}/
     function refreshTeamMembersCacheInBackground() {
         if(DEBUG) console.log('🔄 Фоновое обновление team members...');
         fetchTeamMembersFromAPI()
-            .then(() => { 
+            .then(() => {
                 if(DEBUG) console.log('✅ Фоновое обновление Asana завершено');
                 // v4.3.7: Синхронизация маппинга после обновления
                 syncAsanaRocketMapping();
@@ -3936,7 +4002,7 @@ https://{{alternateDomain}}/
         }
         if(DEBUG) console.log('🔄 Фоновое обновление Rocket.Chat users...');
         fetchRocketUsersFromAPI()
-            .then(() => { 
+            .then(() => {
                 if(DEBUG) console.log('✅ Фоновое обновление Rocket.Chat завершено');
                 // v4.3.7: Синхронизация маппинга после обновления
                 syncAsanaRocketMapping();
@@ -4119,7 +4185,7 @@ https://{{alternateDomain}}/
     // All replaced by sitesDatabase. Migration handled by migrateLegacyToSites()
 
     // ===== ЕДИНАЯ БАЗА САЙТОВ (sitesDatabase) =====
-    
+
     function loadSitesDatabase() {
         return JSON.parse(GM_getValue('sitesDatabase', '{}'));
     }
@@ -4129,15 +4195,15 @@ https://{{alternateDomain}}/
     }
 
     // ===== ИСТОРИЯ АВТОМАТИЗАЦИЙ =====
-    
+
     function loadAutomationHistory() {
         return JSON.parse(GM_getValue('automationHistory', '[]'));
     }
-    
+
     function saveAutomationHistory(history) {
         GM_setValue('automationHistory', JSON.stringify(history));
     }
-    
+
     function addToAutomationHistory(record) {
         const history = loadAutomationHistory();
         const newRecord = {
@@ -4151,26 +4217,26 @@ https://{{alternateDomain}}/
         saveAutomationHistory(history);
         return newRecord;
     }
-    
+
     function clearAutomationHistory() {
         saveAutomationHistory([]);
     }
-    
+
     function exportAutomationHistory() {
         const history = loadAutomationHistory();
         return JSON.stringify(history, null, 2);
     }
-    
+
     // ===== ИСТОРИЯ ЛОКАЛЬНЫХ ТЗ (Excel) =====
-    
+
     function loadLocalTzHistory() {
         return JSON.parse(GM_getValue('localTzHistory', '[]'));
     }
-    
+
     function saveLocalTzHistory(history) {
         GM_setValue('localTzHistory', JSON.stringify(history));
     }
-    
+
     function addToLocalTzHistory(record) {
         const history = loadLocalTzHistory();
         const newRecord = {
@@ -4183,21 +4249,21 @@ https://{{alternateDomain}}/
         saveLocalTzHistory(history);
         return newRecord;
     }
-    
+
     function clearLocalTzHistory() {
         saveLocalTzHistory([]);
     }
-    
+
     // ===== ИСТОРИЯ ОБЛАЧНЫХ ТЗ (Google Sheets) =====
-    
+
     function loadCloudTzHistory() {
         return JSON.parse(GM_getValue('cloudTzHistory', '[]'));
     }
-    
+
     function saveCloudTzHistory(history) {
         GM_setValue('cloudTzHistory', JSON.stringify(history));
     }
-    
+
     function addToCloudTzHistory(record) {
         const history = loadCloudTzHistory();
         const newRecord = {
@@ -4210,7 +4276,7 @@ https://{{alternateDomain}}/
         saveCloudTzHistory(history);
         return newRecord;
     }
-    
+
     function clearCloudTzHistory() {
         saveCloudTzHistory([]);
     }
@@ -4266,11 +4332,11 @@ https://{{alternateDomain}}/
     function migrateSubtaskTemplatesAllocation() {
         const saved = GM_getValue('subtaskTemplates');
         if (!saved) return; // Нет сохранённых шаблонов
-        
+
         try {
             const templates = JSON.parse(saved);
             let migrated = false;
-            
+
             for (const dept in templates) {
                 templates[dept].forEach(template => {
                     if (template.allocation > 10) {
@@ -4279,7 +4345,7 @@ https://{{alternateDomain}}/
                     }
                 });
             }
-            
+
             if (migrated) {
                 GM_setValue('subtaskTemplates', JSON.stringify(templates));
                 if(DEBUG) console.log('✅ Миграция шаблонов подзадач: allocation изменён на 1%');
@@ -4320,11 +4386,11 @@ https://{{alternateDomain}}/
     // v4.2.1: Валидация с проверкой www И протокола
     function validateWithDatabase(type, domain, value, db = null) {
         if (!value) return { status: 'empty' };
-        
+
         // v4.5.2 PERF: Используем переданную базу или загружаем
         if (!db) db = loadSitesDatabase();
         const normalizedDomain = normalizeDomain(domain);
-        
+
         // Хелперы для проверки www и протокола
         const getProtocol = (url) => {
             if (url.toLowerCase().startsWith('https://')) return 'https';
@@ -4334,7 +4400,7 @@ https://{{alternateDomain}}/
         const hasWww = (url) => {
             return url.toLowerCase().replace(/^https?:\/\//, '').startsWith('www.');
         };
-        
+
         // Находим сайт в базе
         let site = null;
         for (const d in db) {
@@ -4346,16 +4412,16 @@ https://{{alternateDomain}}/
         if (!site && db[domain] && db[domain].status === 'active') {
             site = db[domain];
         }
-        
+
         const normalizedValue = normalizeDomain(value);
         const valueProtocol = getProtocol(value);
         const valueHasWww = hasWww(value);
-        
+
         // Функция сравнения URL
         const compareUrls = (dbUrl) => {
             const dbProtocol = getProtocol(dbUrl);
             const dbHasWww = hasWww(dbUrl);
-            
+
             const issues = [];
             if (valueProtocol && dbProtocol && valueProtocol !== dbProtocol) {
                 issues.push('протокол: ' + dbProtocol + ' → ' + valueProtocol);
@@ -4363,14 +4429,14 @@ https://{{alternateDomain}}/
             if (valueHasWww !== dbHasWww) {
                 issues.push('www: ' + (dbHasWww ? 'с www' : 'без www') + ' → ' + (valueHasWww ? 'с www' : 'без www'));
             }
-            
+
             return {
                 match: issues.length === 0,
                 issues: issues,
                 message: issues.length > 0 ? 'В базе: ' + dbUrl + ' (' + issues.join(', ') + ')' : ''
             };
         };
-        
+
         if (type === 'domain') {
             if(DEBUG) console.log('🔎 validateWithDatabase DOMAIN:', value, '→ normalized:', normalizedValue);
             for (const d in db) {
@@ -4390,12 +4456,12 @@ https://{{alternateDomain}}/
             if(DEBUG) console.log('   → not-found');
             return { status: 'not-found', message: 'Домен не найден в базе' };
         }
-        
+
         if (type === 'oldSub') {
             if (!site || !site.oldSubdomains || site.oldSubdomains.length === 0) {
                 return { status: 'not-found', message: 'Нет истории поддоменов' };
             }
-            
+
             for (const s of site.oldSubdomains) {
                 if (normalizeDomain(s.url) === normalizedValue) {
                     const cmp = compareUrls(s.url);
@@ -4407,12 +4473,12 @@ https://{{alternateDomain}}/
             }
             return { status: 'not-found', message: 'Поддомен не найден в истории' };
         }
-        
+
         if (type === 'newSub') {
             if (!site || !site.currentSubdomain) {
                 return { status: 'not-found', message: 'Текущий поддомен не задан' };
             }
-            
+
             if (normalizeDomain(site.currentSubdomain) === normalizedValue) {
                 const cmp = compareUrls(site.currentSubdomain);
                 if (!cmp.match) {
@@ -4422,19 +4488,19 @@ https://{{alternateDomain}}/
             }
             return { status: 'not-found', message: 'Не совпадает с текущим: ' + site.currentSubdomain };
         }
-        
+
         return { status: 'unknown' };
     }
-    
+
     // v4.2.0: Применить стиль к input
     function applyInputStyle(input, validation, isRequired) {
         // Убираем старые классы
         input.classList.remove('input-valid', 'input-error');
-        
+
         // Убираем старый tooltip
         const oldTooltip = input.parentElement.querySelector('.input-warning-tooltip');
         if (oldTooltip) oldTooltip.remove();
-        
+
         if (validation.status === 'valid') {
             input.classList.add('input-valid');
         } else if (validation.status === 'www-mismatch') {
@@ -4455,7 +4521,7 @@ https://{{alternateDomain}}/
     function updateSiteAfterTask(domain, data) {
         const db = loadSitesDatabase();
         const normalized = normalizeDomain(domain);
-        
+
         // Ищем домен в базе (с учётом www)
         let targetDomain = null;
         if (db[domain]) {
@@ -4468,27 +4534,27 @@ https://{{alternateDomain}}/
                 }
             }
         }
-        
+
         if (targetDomain && db[targetDomain]) {
             // Основной домен: отдел, CMS, флаги
             if (data.department) db[targetDomain].department = data.department;
             if (data.cms) db[targetDomain].cms = data.cms;
             if (data.hasAMP !== undefined) db[targetDomain].hasAMP = data.hasAMP;
             if (data.dmcaDefault !== undefined) db[targetDomain].dmcaDefault = data.dmcaDefault;
-            
+
             // Новый поддомен: currentSubdomain, отдел, дата последней задачи
             if (data.currentSubdomain) db[targetDomain].currentSubdomain = data.currentSubdomain;
             if (data.lastTaskDate) db[targetDomain].lastTaskDate = data.lastTaskDate;
-            
+
             // Старый поддомен: добавляем/обновляем в oldSubdomains с action
             if (data.oldSubdomain) {
-                const existingIdx = db[targetDomain].oldSubdomains.findIndex(s => 
+                const existingIdx = db[targetDomain].oldSubdomains.findIndex(s =>
                     normalizeDomain(s.url) === normalizeDomain(data.oldSubdomain)
                 );
-                
+
                 const action = data.redirect301 ? '301' : (data.redirect404 ? '404' : '301');
                 const usedDate = new Date().toISOString().split('T')[0];
-                
+
                 if (existingIdx >= 0) {
                     // Обновляем существующую запись
                     db[targetDomain].oldSubdomains[existingIdx].action = action;
@@ -4502,7 +4568,7 @@ https://{{alternateDomain}}/
                     });
                 }
             }
-            
+
             saveSitesDatabase(db);
             if(DEBUG) console.log('📝 База обновлена для домена:', targetDomain);
         }
@@ -4534,7 +4600,7 @@ https://{{alternateDomain}}/
     // v4.3.5: Добавление старого поддомена в базу
     function addOldSubdomainToSite(domain, subdomainUrl, action = '301', usedDate = '') {
         const db = loadSitesDatabase();
-        
+
         // Если домена нет в базе - создаём
         if (!db[domain]) {
             db[domain] = {
@@ -4549,22 +4615,22 @@ https://{{alternateDomain}}/
                 addedDate: new Date().toISOString().split('T')[0]
             };
         }
-        
+
         if (!db[domain].oldSubdomains) {
             db[domain].oldSubdomains = [];
         }
-        
+
         // Проверяем существует ли уже такой поддомен
-        const existingIdx = db[domain].oldSubdomains.findIndex(s => 
+        const existingIdx = db[domain].oldSubdomains.findIndex(s =>
             normalizeDomain(s.url) === normalizeDomain(subdomainUrl)
         );
-        
+
         const newEntry = {
             url: subdomainUrl,
             action: action,
             usedDate: usedDate || new Date().toISOString().split('T')[0]
         };
-        
+
         if (existingIdx >= 0) {
             // Обновляем существующую запись
             db[domain].oldSubdomains[existingIdx] = newEntry;
@@ -4572,7 +4638,7 @@ https://{{alternateDomain}}/
             // Добавляем новую запись
             db[domain].oldSubdomains.push(newEntry);
         }
-        
+
         saveSitesDatabase(db);
     }
 
@@ -4619,16 +4685,16 @@ https://{{alternateDomain}}/
             if (sheet1Name) {
                 const sheet1 = workbook.Sheets[sheet1Name];
                 const data1 = XLSX.utils.sheet_to_json(sheet1, { header: 1 });
-                
+
                 if (data1.length > 1) { // FIX: минимум заголовок + 1 строка данных
                     const headers = data1[0].map(h => String(h || '').trim().toLowerCase());
                     const domainIdx = headers.indexOf('domain');
-                    
+
                     if (domainIdx !== -1) {
                         for (let i = 1; i < data1.length; i++) { // FIX: начинаем со 2-й строки (данные)
                             const row = data1[i];
                             if (!row || !row[domainIdx]) continue;
-                            
+
                             const domain = String(row[domainIdx]).trim();
                             if (!domain) continue;
 
@@ -4663,7 +4729,7 @@ https://{{alternateDomain}}/
             if (sheet2Name) {
                 const sheet2 = workbook.Sheets[sheet2Name];
                 const data2 = XLSX.utils.sheet_to_json(sheet2, { header: 1 });
-                
+
                 if (data2.length > 1) { // FIX: минимум заголовок + 1 строка данных
                     const headers = data2[0].map(h => String(h || '').trim().toLowerCase());
                     const domainIdx = headers.indexOf('domain');
@@ -4707,7 +4773,7 @@ https://{{alternateDomain}}/
             if (sheet3Name) {
                 const sheet3 = workbook.Sheets[sheet3Name];
                 const data3 = XLSX.utils.sheet_to_json(sheet3, { header: 1 });
-                
+
                 if (data3.length > 1) { // FIX: минимум заголовок + 1 строка данных
                     const headers = data3[0].map(h => String(h || '').trim().toLowerCase());
                     const domainIdx = headers.indexOf('domain');
@@ -4765,6 +4831,8 @@ https://{{alternateDomain}}/
             this.currentMode = 'mass'; // 'single' или 'mass' (v4.5.1: по умолчанию mass)
             this.tasks = []; // Массив задач для массового режима
             this.taskIdCounter = 1; // Счётчик ID задач
+            // v4.5.5 - Фоновый режим
+            this.isProcessing = false; // Флаг активной операции
         }
 
         create() {
@@ -4774,7 +4842,7 @@ https://{{alternateDomain}}/
             document.body.appendChild(this.shadowHost);
 
             this.shadowRoot = this.shadowHost.attachShadow({ mode: 'open' });
-            
+
             // v4.3.7: Блокируем всплытие событий клавиатуры
             preventKeyboardEventBubbling(this.shadowRoot);
 
@@ -4800,7 +4868,7 @@ https://{{alternateDomain}}/
         getHTML() {
             return `
                 <div class="dashboard-header" id="dashboard-header">
-                    <h2 class="dashboard-title">🔧 Смена поддоменов v4.0</h2>
+                    <h2 class="dashboard-title" id="dashboard-title">🔧 Смена поддоменов v4.0</h2>
                     <button class="close-btn" id="close-dashboard">&times;</button>
                 </div>
                 <div class="dashboard-content">
@@ -4826,9 +4894,18 @@ https://{{alternateDomain}}/
 
                     <!-- Общий лог выполнения -->
                     <div class="status-log" id="status-log" style="display: none;">
-                        <div class="log-title">Лог выполнения:</div>
+                        <div class="log-header">
+                            <div class="log-title">Лог выполнения:</div>
+                            <button class="log-copy-btn" id="copy-log-btn" title="Копировать лог">📋 Копировать</button>
+                        </div>
                         <div class="log-content" id="log-content"></div>
                     </div>
+                </div>
+                
+                <!-- v4.5.5: Глобальный прогресс-бар закреплён внизу -->
+                <div class="global-progress" id="global-progress" style="display: none;">
+                    <div class="global-progress-bar" id="global-progress-bar"></div>
+                    <div class="global-progress-text" id="global-progress-text">0%</div>
                 </div>
             `;
         }
@@ -5010,35 +5087,35 @@ https://{{alternateDomain}}/
         switchMode(mode) {
             this.currentMode = mode;
             const container = this.shadowRoot.querySelector('.dashboard-container');
-            
+
             // Обновляем кнопки
             this.shadowRoot.getElementById('mode-btn-single').classList.toggle('active', mode === 'single');
             this.shadowRoot.getElementById('mode-btn-mass').classList.toggle('active', mode === 'mass');
-            
+
             // Переключаем размер контейнера
             container.classList.toggle('mass-mode', mode === 'mass');
-            
+
             // Показываем нужный контейнер
             this.shadowRoot.getElementById('single-mode-container').classList.toggle('active', mode === 'single');
             this.shadowRoot.getElementById('mass-mode-container').classList.toggle('active', mode === 'mass');
-            
+
             if (mode === 'mass') {
                 this.renderTasksTable();
             }
         }
 
         // ===== v4.5.0: СВОДКА =====
-        
+
         // v4.5.0: Генерация сводного отчёта с ТЗ
         generateSummaryReport() {
             // v4.5.2: Используем выбранные задачи или все
             const tasksToProcess = this.getSelectedTasks();
-            
+
             if (!tasksToProcess.length) {
                 showToast('⚠️ Выберите задачи для сводки.\n\nОтметьте галочками нужные задачи в таблице.', 'warning');
                 return;
             }
-            
+
             // Проверяем что все задачи заполнены
             const emptyTasks = tasksToProcess.filter((t, i) => !t.taskName || t.taskName.trim() === '');
             if (emptyTasks.length > 0) {
@@ -5049,13 +5126,13 @@ https://{{alternateDomain}}/
                 showToast('⚠️ Не выбран тип задачи!\n\nЗаполните поле "Задача" в строках: ' + emptyIndexes, 'warning');
                 return;
             }
-            
+
             const templates = loadTemplates();
             const taskTypes = loadTaskTypes();
-            
+
             // v4.5.2: Массив для хранения сгенерированных файлов
             const generatedFiles = [];
-            
+
             // Маппинг переменных к названиям полей для уведомлений
             const variableToLabel = {
                 'domain': 'Домен',
@@ -5068,7 +5145,7 @@ https://{{alternateDomain}}/
                 'cms': 'CMS',
                 'notes': 'Примечания'
             };
-            
+
             // Поля, которые НЕ проверяются (вспомогательные/управляющие)
             const excludedFromCheck = [
                 'redirect301', 'redirect404', 'redirect',  // чекбоксы редиректов
@@ -5077,36 +5154,36 @@ https://{{alternateDomain}}/
                 'subtasks',                                // подзадачи
                 'priority', 'cms', 'notes'                 // опциональные поля
             ];
-            
+
             // Функция извлечения переменных из шаблона
             const extractVariables = (template) => {
                 const matches = template.match(/\{\{(\w+)\}\}/g) || [];
                 return [...new Set(matches.map(m => m.replace(/\{\{|\}\}/g, '')))];
             };
-            
+
             // Функция очистки URL - убирает https:// и trailing slash
             const cleanUrl = (url) => {
                 if (!url) return '';
                 return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
             };
-            
+
             // Проверяем все задачи на заполненность необходимых полей
             const warnings = [];
-            
+
             tasksToProcess.forEach((task, index) => {
                 // Определяем тип задачи по названию
                 const taskTypesArr = Object.values(taskTypes);
                 const matchedType = taskTypesArr.find(t => t.name === task.taskName);
-                
+
                 // Для произвольных задач (не из списка) - не проверяем обязательные поля
                 if (!matchedType) {
                     return;
                 }
-                
+
                 const taskType = taskTypes[matchedType.id];
                 const tzTemplate = taskType.tzTemplate || '';
                 const requiredVars = extractVariables(tzTemplate);
-                
+
                 // Собираем данные задачи
                 const taskData = {
                     domain: cleanUrl(task.domain),
@@ -5119,7 +5196,7 @@ https://{{alternateDomain}}/
                     cms: task.cms,
                     notes: task.notes
                 };
-                
+
                 // Проверяем незаполненные переменные (кроме исключённых)
                 const missingFields = [];
                 requiredVars.forEach(varName => {
@@ -5127,7 +5204,7 @@ https://{{alternateDomain}}/
                     if (excludedFromCheck.includes(varName)) {
                         return;
                     }
-                    
+
                     if (varName === 'hreflangCode') {
                         // hreflangCode заполнен если выбран шаблон
                         if (!taskData.hreflangCode) {
@@ -5137,24 +5214,24 @@ https://{{alternateDomain}}/
                         missingFields.push(variableToLabel[varName] || varName);
                     }
                 });
-                
+
                 if (missingFields.length > 0) {
                     const taskLabel = task.taskName || 'Задача ' + (index + 1);
                     warnings.push('📋 ' + taskLabel + '\n   → ' + missingFields.join(', '));
                 }
             });
-            
+
             // Показываем предупреждение если есть незаполненные поля
             if (warnings.length > 0) {
-                const warningMsg = '⚠️ Не заполнены обязательные поля:\n\n' + 
-                    warnings.join('\n\n') + 
+                const warningMsg = '⚠️ Не заполнены обязательные поля:\n\n' +
+                    warnings.join('\n\n') +
                     '\n\n━━━━━━━━━━━━━━━━━━━━━━━━\nПродолжить? (пустые поля не будут добавлены в ТЗ)';
-                
+
                 if (!confirm(warningMsg)) {
                     return;
                 }
             }
-            
+
             // Создаём отдельный лист для каждой задачи
             tasksToProcess.forEach((task, index) => {
                 // Очищаем данные
@@ -5162,13 +5239,13 @@ https://{{alternateDomain}}/
                 const oldSub = cleanUrl(task.oldSub);
                 const newSub = cleanUrl(task.newSub);
                 const alternateDomain = cleanUrl(task.alternateDomain);
-                
+
                 // Пропускаем только если вообще ничего не заполнено
                 if (!task.taskName && !domain && !oldSub && !newSub && !alternateDomain) {
                     console.warn(`Задача ${index + 1}: все поля пустые, пропускаем`);
                     return;
                 }
-                
+
                 // Генерируем hreflang код
                 const hreflangTemplate = task.templateIndex !== '' && task.templateIndex !== undefined ? templates[task.templateIndex] : null;
                 let hreflangCode = '';
@@ -5181,13 +5258,13 @@ https://{{alternateDomain}}/
 <link rel="alternate" hreflang="x-default" href="https://${domain}/"/>
 <link rel="alternate" hreflang="ru" href="https://${newSub}/"/>`;
                 }
-                
+
                 // Определяем тип задачи
                 const taskTypesArr = Object.values(taskTypes);
                 const matchedType = taskTypesArr.find(t => t.name === task.taskName);
-                
+
                 if(DEBUG) console.log('Task:', task.taskName, 'Matched:', matchedType ? matchedType.name : 'NOT FOUND');
-                
+
                 // Получаем имя ответственного из маппинга
                 const rocketMapping = loadRocketChatMapping();
                 let assigneeName = '';
@@ -5195,7 +5272,7 @@ https://{{alternateDomain}}/
                     const data = rocketMapping[task.assignee];
                     assigneeName = typeof data === 'object' ? (data.asanaName || data.name) : data;
                 }
-                
+
                 // v4.5.2: Формируем список подзадач с полной информацией
                 const subtasksList = (task.subtasks || [])
                     .filter(s => s.name && s.name.trim())
@@ -5213,14 +5290,14 @@ https://{{alternateDomain}}/
                         return line;
                     })
                     .join('\n');
-                
+
                 let tzContent = '';
-                
+
                 if (matchedType) {
                     // Тип задачи из настроек - используем шаблон
                     const taskType = taskTypes[matchedType.id];
                     tzContent = taskType.tzTemplate || '';
-                    
+
                     // Заменяем переменные в шаблоне
                     tzContent = tzContent
                         .replace(/\{\{domain\}\}/g, domain)
@@ -5244,7 +5321,7 @@ https://{{alternateDomain}}/
                     const lines = [];
                     lines.push(task.taskName); // Заголовок
                     lines.push(''); // Пустая строка
-                    
+
                     if (task.department) lines.push(`Отдел:\t${task.department}`);
                     if (domain) lines.push(`Домен:\t${domain}`);
                     if (oldSub) lines.push(`Старый поддомен:\t${oldSub}`);
@@ -5268,7 +5345,7 @@ https://{{alternateDomain}}/
                     if (task.amp) lines.push(`AMP:\tДа`);
                     if (assigneeName) lines.push(`Ответственный:\t${assigneeName}`);
                     if (task.notes) lines.push(`Примечания:\t${task.notes}`);
-                    
+
                     // v4.5.2: Подзадачи с полной информацией
                     if (subtasksList) {
                         lines.push('');
@@ -5289,14 +5366,14 @@ https://{{alternateDomain}}/
                                 lines.push(`•\t${line}`);
                             });
                     }
-                    
+
                     tzContent = lines.join('\n');
                 }
-                
+
                 // v4.5.0: Для типов из списка добавляем блок с активированными полями
                 if (matchedType) {
                     const additionalInfo = [];
-                
+
                     if (task.redirect301) additionalInfo.push('301 редирект: Да');
                     if (task.redirect404) additionalInfo.push('404 ошибка: Да');
                     if (task.dmca) additionalInfo.push('DMCA: Да');
@@ -5305,42 +5382,42 @@ https://{{alternateDomain}}/
                     if (task.cms) additionalInfo.push(`CMS: ${task.cms}`);
                     if (assigneeName) additionalInfo.push(`Ответственный: ${assigneeName}`);
                     if (task.notes) additionalInfo.push(`Примечания: ${task.notes}`);
-                    
+
                     // Добавляем подзадачи если есть
                     if (subtasksList) {
                         additionalInfo.push('');
                         additionalInfo.push('Подзадачи:');
                         additionalInfo.push(subtasksList);
                     }
-                    
+
                     // Добавляем блок в конец ТЗ если есть что добавить
                     if (additionalInfo.length > 0) {
                         tzContent += '\n\n--- Дополнительно ---\n' + additionalInfo.join('\n');
                     }
                 }
-                
+
                 // Конвертируем в массив строк для Excel
                 const tzLines = tzContent.split('\n').map(line => [line]);
-                
+
                 // v4.5.2: Создаём отдельный файл для каждой задачи
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(tzLines);
-                
+
                 // Устанавливаем ширину колонки
                 ws['!cols'] = [{ wch: 120 }];
-                
+
                 // Имя листа
                 let sheetName = task.taskName || newSub || domain || `Задача_${index + 1}`;
                 sheetName = sheetName.substring(0, 31).replace(/[\\/*?:\[\]]/g, '_');
-                
+
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                
+
                 // Формируем имя файла: идентификатор - задача [ответственный].xlsx
                 const today = new Date().toISOString().split('T')[0];
                 // Берём первое непустое: domain → newSub → oldSub → alternateDomain
                 const identifier = domain || newSub || oldSub || alternateDomain || '';
                 const safeTaskName = (task.taskName || 'задача').replace(/[\\/*?:\[\]<>|"]/g, '_');
-                
+
                 // Формируем имя: если есть домен - "домен - задача", иначе просто "задача"
                 let filename;
                 if (identifier && !/^\d+$/.test(identifier)) {
@@ -5349,26 +5426,26 @@ https://{{alternateDomain}}/
                 } else {
                     filename = safeTaskName;
                 }
-                
+
                 // Добавляем ответственного если есть
                 if (assigneeName) {
                     const safeAssignee = assigneeName.replace(/[\\/*?:\[\]<>|"]/g, '_');
                     filename += ` [${safeAssignee}]`;
                 }
-                
+
                 filename += '.xlsx';
-                
+
                 XLSX.writeFile(wb, filename);
                 generatedFiles.push({ filename, task });
             });
-            
+
             if (generatedFiles.length === 0) {
                 showToast('Нет задач с данными для генерации ТЗ.');
                 return;
             }
-            
+
             const today = new Date().toISOString().split('T')[0];
-            
+
             // v4.5.1: Запись в историю локальных ТЗ
             generatedFiles.forEach(({ filename, task }) => {
                 if (task.taskName) {
@@ -5391,20 +5468,20 @@ https://{{alternateDomain}}/
                     });
                 }
             });
-            
+
             showToast(`📊 Сохранено ${generatedFiles.length} файлов ТЗ`, 'success');
         }
-        
+
         // v4.5.0: Генерация облачного отчёта (Google Sheets / Microsoft Excel) + пинг Rocket.Chat
         async generateCloudReport() {
             // v4.5.2: Используем выбранные задачи или все
             const tasksToProcess = this.getSelectedTasks();
-            
+
             if (!tasksToProcess.length) {
                 showToast('⚠️ Выберите задачи для отправки в облако.\n\nОтметьте галочками нужные задачи в таблице.', 'warning');
                 return;
             }
-            
+
             // Проверяем что все задачи заполнены
             const emptyTasks = tasksToProcess.filter((t, i) => !t.taskName || t.taskName.trim() === '');
             if (emptyTasks.length > 0) {
@@ -5415,11 +5492,11 @@ https://{{alternateDomain}}/
                 showToast('⚠️ Не выбран тип задачи!\n\nЗаполните поле "Задача" в строках: ' + emptyIndexes, 'warning');
                 return;
             }
-            
+
             // Проверяем обязательные поля для каждого типа задачи
             const taskTypes = loadTaskTypes();
             const cleanUrl = (url) => url ? url.replace(/^https?:\/\//, '').replace(/\/+$/, '') : '';
-            
+
             const fieldLabels = {
                 'domain': 'Домен',
                 'oldSub': 'Старый поддомен',
@@ -5427,53 +5504,54 @@ https://{{alternateDomain}}/
                 'alternateDomain': 'Домен подмены',
                 'hreflangCode': 'hreflang'
             };
-            
-            const missingFieldsErrors = [];
-            
+
+            const missingFieldsRows = [];
+
             tasksToProcess.forEach((task, index) => {
                 const taskTypesArr = Object.values(taskTypes);
                 const matchedType = taskTypesArr.find(t => t.name === task.taskName);
-                
+
                 // Только для типов из настроек проверяем обязательные поля
                 if (matchedType) {
                     const taskType = taskTypes[matchedType.id];
                     const tzTemplate = taskType.tzTemplate || '';
-                    
+
                     // Извлекаем переменные из шаблона
                     const varMatches = tzTemplate.match(/\{\{(\w+)\}\}/g) || [];
                     const requiredVars = [...new Set(varMatches.map(m => m.replace(/\{\{|\}\}/g, '')))];
-                    
-                    const missing = [];
-                    
+
+                    let hasMissing = false;
+
                     requiredVars.forEach(varName => {
                         // Пропускаем служебные поля
                         if (['redirect', 'redirect301', 'redirect404', 'priority', 'cms', 'dmca', 'amp', 'assignee', 'subtasks', 'notes'].includes(varName)) {
                             return;
                         }
-                        
+
                         let isEmpty = false;
                         if (varName === 'domain') isEmpty = !cleanUrl(task.domain);
                         else if (varName === 'oldSub') isEmpty = !cleanUrl(task.oldSub);
                         else if (varName === 'newSub') isEmpty = !cleanUrl(task.newSub);
                         else if (varName === 'alternateDomain') isEmpty = !cleanUrl(task.alternateDomain);
                         else if (varName === 'hreflangCode') isEmpty = task.templateIndex === '' || task.templateIndex === undefined;
-                        
-                        if (isEmpty) {
-                            missing.push(fieldLabels[varName] || varName);
-                        }
+
+                        if (isEmpty) hasMissing = true;
                     });
-                    
-                    if (missing.length > 0) {
-                        missingFieldsErrors.push('Строка ' + (index + 1) + ' (' + task.taskName + '):\n   → ' + missing.join(', '));
+
+                    if (hasMissing) {
+                        missingFieldsRows.push(index + 1);
                     }
                 }
             });
-            
-            if (missingFieldsErrors.length > 0) {
-                showToast('⚠️ Не заполнены обязательные поля:\n\n' + missingFieldsErrors.join('\n\n'), 'warning');
-                return;
+
+            // v4.5.5: Компактное предупреждение
+            if (missingFieldsRows.length > 0) {
+                const warningMsg = '⚠️ Есть незаполненные поля в ' + missingFieldsRows.length + ' строках:\n' + missingFieldsRows.join(', ') + '\n\nПродолжить? (пустые поля не будут добавлены в ТЗ)';
+                if (!confirm(warningMsg)) {
+                    return;
+                }
             }
-            
+
             // Проверяем задачи с включённым пингом но без ответственного
             const tasksWithPingNoAssignee = tasksToProcess.filter(t => t.pingRocket && !t.assignee);
             if (tasksWithPingNoAssignee.length > 0) {
@@ -5481,13 +5559,13 @@ https://{{alternateDomain}}/
                 showToast('⚠️ Включён пинг, но не выбран ответственный:\n\n' + taskNames + '\n\nВыберите ответственного или отключите пинг.', 'warning');
                 return;
             }
-            
+
             // Определяем провайдер
             const cloudProvider = GM_getValue('cloudProvider', 'google');
             // v4.5.3: Используем дефолтный URL из CONFIG
             const googleScriptUrl = GM_getValue('googleAppsScriptUrl', CONFIG.cloud.defaultGoogleScriptUrl);
             const powerAutomateUrl = GM_getValue('powerAutomateUrl', '');
-            
+
             // Проверяем настроен ли URL для выбранного провайдера
             if (cloudProvider === 'google' && !googleScriptUrl) {
                 showToast(' Не настроен Google Apps Script URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
@@ -5497,43 +5575,134 @@ https://{{alternateDomain}}/
                 showToast(' Не настроен Power Automate URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
                 return;
             }
-            
+
             // Собираем задачи с пингом
             const tasksToNotify = tasksToProcess.filter(t => t.pingRocket && t.assignee);
             const rocketMapping = loadRocketChatMapping();
-            
+
             // Показываем лог и начинаем
             const providerName = cloudProvider === 'google' ? 'Google Sheets' : 'Microsoft Excel';
             this.showStatusLog();
+            this.setProcessingState(true);  // v4.5.5: Начало фоновой операции
             this.logMessage('☁️ Создание ТЗ в облаке...');
             this.logMessage('📊 Провайдер: ' + providerName);
             this.logMessage('📋 Задач: ' + tasksToProcess.length);
-            
+            this.logMessage('🔗 URL: ' + (cloudProvider === 'google' ? googleScriptUrl.substring(0, 60) + '...' : powerAutomateUrl.substring(0, 60) + '...'));
+
             // Логируем каждую задачу
             tasksToProcess.forEach((task, i) => {
                 const taskInfo = task.taskName || 'Без названия';
                 const domain = task.domain ? task.domain.replace(/^https?:\/\//, '') : '';
                 this.logMessage('   ' + (i + 1) + '. ' + taskInfo + (domain ? ' (' + domain + ')' : ''));
             });
-            
+
             this.logMessage('');
             this.logMessage('⏳ Отправка в ' + providerName + '...');
-            
+
             try {
                 // Подготавливаем данные
                 const sheetData = this.prepareCloudData(tasksToProcess);
-                
-                // Отправляем в выбранный провайдер
+                this.logMessage('📦 Размер данных: ' + JSON.stringify(sheetData).length + ' байт');
+
+                // v4.5.5: Batch-обработка для больших объёмов (порции по 5 задач для надёжности)
+                const BATCH_SIZE = 5;
                 let response;
+                
+                // v4.5.5: Retry-функция с детальным логированием
+                const sendWithRetry = async (data, attempt = 1, maxAttempts = 3) => {
+                    try {
+                        const startTime = Date.now();
+                        const result = await this.sendToGoogleSheets(googleScriptUrl, data);
+                        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                        this.logMessage(`   ✓ Успешно за ${elapsed}с`, 'success');
+                        return result;
+                    } catch (err) {
+                        this.logMessage(`   ⚠️ Попытка ${attempt}/${maxAttempts}: ${err.message}`, 'warning');
+                        if (attempt < maxAttempts) {
+                            const delay = attempt * 2000; // 2с, 4с, 6с
+                            this.logMessage(`   ⏳ Повтор через ${delay/1000}с...`);
+                            await new Promise(r => setTimeout(r, delay));
+                            return sendWithRetry(data, attempt + 1, maxAttempts);
+                        }
+                        throw err;
+                    }
+                };
+                
                 if (cloudProvider === 'google') {
-                    response = await this.sendToGoogleSheets(googleScriptUrl, sheetData);
+                    // v4.5.5: Показываем прогресс-бар всегда
+                    this.showProgress(true);
+                    
+                    if (sheetData.length > BATCH_SIZE) {
+                        // Разбиваем на порции
+                        const batches = [];
+                        for (let i = 0; i < sheetData.length; i += BATCH_SIZE) {
+                            batches.push(sheetData.slice(i, i + BATCH_SIZE));
+                        }
+                        
+                        this.logMessage('📦 Разбиваем на ' + batches.length + ' порций по ' + BATCH_SIZE + ' задач...');
+                        this.updateProgress(0, batches.length);
+                        
+                        const allResponses = [];
+                        const startTime = Date.now();
+                        
+                        for (let i = 0; i < batches.length; i++) {
+                            this.logMessage('');
+                            this.logMessage('📤 Порция ' + (i + 1) + '/' + batches.length + ' (' + batches[i].length + ' задач)...');
+                            this.updateProgress(i, batches.length);
+                            
+                            try {
+                                const batchResponse = await sendWithRetry(batches[i]);
+                                allResponses.push(batchResponse);
+                            } catch (batchErr) {
+                                this.logMessage(`   ❌ Порция ${i + 1} не отправлена: ${batchErr.message}`, 'error');
+                                // Продолжаем с остальными порциями
+                            }
+                            
+                            this.updateProgress(i + 1, batches.length);
+                            
+                            // Пауза между порциями чтобы не перегружать сервер
+                            if (i < batches.length - 1) {
+                                this.logMessage('   ⏸️ Пауза 1с...');
+                                await new Promise(r => setTimeout(r, 1000));
+                            }
+                        }
+                        
+                        const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                        this.logMessage('');
+                        this.logMessage(`⏱️ Общее время: ${totalTime}с`);
+                        
+                        if (allResponses.length === 0) {
+                            this.showProgress(false);
+                            throw new Error('Все порции не удалось отправить');
+                        }
+                        
+                        // Объединяем результаты и убираем дубликаты URL
+                        const allSheets = allResponses.flatMap(r => r.sheets || [{ url: r.sheetUrl, name: r.sheetName }]);
+                        const uniqueUrls = [...new Set(allSheets.map(s => s.url).filter(u => u))];
+                        const uniqueSheets = uniqueUrls.map(url => allSheets.find(s => s.url === url));
+                        
+                        response = {
+                            success: allResponses.length > 0,
+                            sheetUrl: allResponses[0]?.sheetUrl,
+                            sheetName: allResponses[0]?.sheetName,
+                            sheets: uniqueSheets
+                        };
+                        
+                        this.logMessage('');
+                        this.logMessage(`📊 Итого: ${allResponses.length}/${batches.length} порций отправлено`);
+                    } else {
+                        // Малое количество задач - одна отправка
+                        this.updateProgress(0, 1, 'Отправка...');
+                        response = await sendWithRetry(sheetData);
+                        this.updateProgress(1, 1, '100%');
+                    }
                 } else {
                     response = await this.sendToPowerAutomate(powerAutomateUrl, sheetData);
                 }
-                
+
                 if (response.success && response.sheetUrl) {
                     this.logMessage('✅ ТЗ успешно сохранено!', 'success');
-                    
+
                     // v4.5.2: Показываем все URL если несколько таблиц
                     if (response.sheets && response.sheets.length > 1) {
                         this.logMessage('📄 Создано таблиц: ' + response.sheets.length, 'success');
@@ -5544,10 +5713,10 @@ https://{{alternateDomain}}/
                     } else {
                         this.logMessage('🔗 ' + response.sheetUrl, 'success');
                     }
-                    
+
                     // v4.5.1: Запись в историю облачных ТЗ
                     const cleanUrlFn = (url) => url ? url.replace(/^https?:\/\//, '').replace(/\/+$/, '') : '';
-                    
+
                     // v4.5.2: Записываем каждую задачу со своим URL
                     tasksToProcess.forEach((task, idx) => {
                         if (task.taskName) {
@@ -5573,14 +5742,21 @@ https://{{alternateDomain}}/
                             });
                         }
                     });
-                    
+
                     // v4.5.2: Сначала показываем URL — пинги идут фоном
                     this.logMessage('');
                     this.logMessage('🎉 Готово!', 'success');
+                    this.showProgress(false);  // v4.5.5: скрываем прогресс-бар
+                    this.setProcessingState(false);  // v4.5.5: Конец фоновой операции
                     
+                    // v4.5.5: Уведомляем если окно скрыто
+                    if (this.shadowHost && this.shadowHost.style.display === 'none') {
+                        showToast(`✅ Готово! ${tasksToProcess.length} задач отправлено в ${providerName}`, 'success', 5000);
+                    }
+
                     // Показываем первый URL в виджете (или все если мало)
                     this.logCloudResult(response.sheetUrl, tasksToNotify.length, response.sheets);
-                    
+
                     // v4.5.2: Параллельная отправка пингов (батчами по 5)
                     // Каждому исполнителю отправляем его URL
                     if (tasksToNotify.length > 0) {
@@ -5591,38 +5767,56 @@ https://{{alternateDomain}}/
                         });
                         this.sendRocketPingsBatched(tasksWithUrls, rocketMapping);
                     }
-                    
+
                 } else {
                     throw new Error(response.error || 'Неизвестная ошибка');
                 }
             } catch (error) {
+                this.showProgress(false);  // v4.5.5: скрываем прогресс-бар
+                this.setProcessingState(false);  // v4.5.5: Конец фоновой операции
+                this.logMessage('');
                 this.logMessage('❌ Ошибка: ' + error.message, 'error');
+                this.logMessage('');
+                this.logMessage('💡 Возможные причины:', 'warning');
+                this.logMessage('   • Таймаут сервера (слишком много данных)');
+                this.logMessage('   • Проблема с Google Apps Script');
+                this.logMessage('   • Сетевые ограничения');
+                this.logMessage('');
+                this.logMessage('🔧 Попробуйте:');
+                this.logMessage('   • Уменьшить количество задач');
+                this.logMessage('   • Повторить отправку');
+                this.logMessage('   • Проверить URL в настройках');
+                
+                // v4.5.5: Уведомляем если окно скрыто
+                if (this.shadowHost && this.shadowHost.style.display === 'none') {
+                    showToast('❌ Ошибка при отправке: ' + error.message, 'error', 5000);
+                }
             }
         }
-        
+
         // v4.5.2: Параллельная отправка пингов батчами (не блокирует UI)
         async sendRocketPingsBatched(tasksToNotify, rocketMapping) {
             const BATCH_SIZE = 5;
             const batches = [];
-            
+
             // Разбиваем на батчи по 5
             for (let i = 0; i < tasksToNotify.length; i += BATCH_SIZE) {
                 batches.push(tasksToNotify.slice(i, i + BATCH_SIZE));
             }
-            
+
             this.logMessage('');
             this.logMessage(`📨 Отправка уведомлений (${tasksToNotify.length})...`);
-            
+
             let successCount = 0;
             let failCount = 0;
-            
+
             // Обрабатываем батчи последовательно, внутри батча — параллельно
             for (const batch of batches) {
                 const results = await Promise.allSettled(
                     batch.map(task => {
                         const userData = rocketMapping[task.assignee];
                         if (!userData) return Promise.resolve({ skipped: true });
-                        
+
                         const rocketUsername = typeof userData === 'object' ? userData.name : userData;
                         // v4.5.2: Используем URL из задачи (каждая задача имеет свой sheetUrl)
                         return this.sendRocketPing(rocketUsername, task, task.sheetUrl)
@@ -5630,7 +5824,7 @@ https://{{alternateDomain}}/
                             .catch(e => ({ success: false, username: rocketUsername, taskName: task.taskName, error: e.message }));
                     })
                 );
-                
+
                 // Логируем результаты батча
                 results.forEach(result => {
                     if (result.status === 'fulfilled' && result.value && !result.value.skipped) {
@@ -5644,7 +5838,7 @@ https://{{alternateDomain}}/
                     }
                 });
             }
-            
+
             // Итог
             if (failCount > 0) {
                 this.logMessage(`📊 Пинги: ${successCount} успешно, ${failCount} ошибок`);
@@ -5652,16 +5846,12 @@ https://{{alternateDomain}}/
                 this.logMessage(`📊 Все пинги отправлены (${successCount})`, 'success');
             }
         }
-        
+
         // v4.5.1: Вывод результата в лог с кнопкой копирования
         logCloudResult(sheetUrl, notifyCount, sheets = null) {
             const logContent = this.shadowRoot.getElementById('log-content');
             if (!logContent) return;
-            
-            // v4.5.2: Если несколько таблиц — показываем список
-            const hasMultiple = sheets && sheets.length > 1;
-            const allUrls = hasMultiple ? sheets.map(s => s.url).join('\n') : sheetUrl;
-            
+
             const resultDiv = document.createElement('div');
             resultDiv.className = 'log-cloud-result';
             resultDiv.innerHTML = `
@@ -5669,8 +5859,8 @@ https://{{alternateDomain}}/
                     .log-cloud-result {
                         margin-top: 12px;
                         padding: 12px;
-                        background: #e8f5e9;
-                        border: 1px solid #c8e6c9;
+                        background: #1a2e1a;
+                        border: 1px solid #2e7d32;
                         border-radius: 8px;
                     }
                     .log-cloud-url {
@@ -5681,41 +5871,29 @@ https://{{alternateDomain}}/
                     }
                     .log-cloud-url-text {
                         flex: 1;
-                        font-size: 13px;
-                        color: #1565c0;
+                        font-size: 12px;
+                        color: #4fc3f7;
                         word-break: break-all;
                         padding: 8px;
-                        background: white;
-                        border: 1px solid #e0e0e0;
+                        background: #0d1a0d;
+                        border: 1px solid #333;
                         border-radius: 4px;
-                        max-height: 120px;
-                        overflow-y: auto;
-                        white-space: pre-line;
+                        font-family: monospace;
+                        cursor: pointer;
                     }
+                    .log-cloud-url-text:hover { background: #1a2a1a; }
                     .log-cloud-actions {
                         display: flex;
                         gap: 8px;
-                        flex-wrap: wrap;
                     }
                     .log-cloud-btn {
                         padding: 8px 16px;
                         border: none;
-                        border-radius: 6px;
+                        border-radius: 4px;
                         font-size: 13px;
                         font-weight: 500;
                         cursor: pointer;
                         transition: all 0.2s;
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                    }
-                    .log-cloud-btn-copy {
-                        background: #4CAF50;
-                        color: white;
-                    }
-                    .log-cloud-btn-copy:hover { background: #43a047; }
-                    .log-cloud-btn-copy.copied {
-                        background: #2e7d32;
                     }
                     .log-cloud-btn-open {
                         background: #1976d2;
@@ -5723,96 +5901,79 @@ https://{{alternateDomain}}/
                     }
                     .log-cloud-btn-open:hover { background: #1565c0; }
                     .log-cloud-stats {
-                        font-size: 12px;
-                        color: #666;
+                        font-size: 11px;
+                        color: #888;
                         margin-top: 8px;
                     }
                 </style>
                 <div class="log-cloud-url">
-                    <div class="log-cloud-url-text">${hasMultiple ? allUrls : sheetUrl}</div>
+                    <div class="log-cloud-url-text" id="log-url-text-${Date.now()}" title="Клик для копирования">${sheetUrl}</div>
                 </div>
                 <div class="log-cloud-actions">
-                    <button class="log-cloud-btn log-cloud-btn-copy" id="log-copy-btn-${Date.now()}">
-                        📋 ${hasMultiple ? 'Копировать все ссылки' : 'Копировать ссылку'}
+                    <button class="log-cloud-btn log-cloud-btn-open" id="log-open-btn-${Date.now()}">
+                        📋 История облачных ТЗ
                     </button>
-                    ${hasMultiple ? sheets.map((s, i) => `
-                        <button class="log-cloud-btn log-cloud-btn-open" data-url="${s.url}">
-                            🔗 ${i + 1}
-                        </button>
-                    `).join('') : `
-                        <button class="log-cloud-btn log-cloud-btn-open" id="log-open-btn-${Date.now()}">
-                            🔗 Открыть
-                        </button>
-                    `}
                 </div>
-                ${notifyCount > 0 ? '<div class="log-cloud-stats">📨 Уведомлений отправлено: ' + notifyCount + '</div>' : ''}
+                ${notifyCount > 0 ? '<div class="log-cloud-stats">📨 Уведомлений: ' + notifyCount + '</div>' : ''}
             `;
-            
+
             logContent.appendChild(resultDiv);
             logContent.scrollTop = logContent.scrollHeight;
-            
-            // Обработчики кнопок
-            const copyBtn = resultDiv.querySelector('[id^="log-copy-btn"]');
-            
-            // v4.5.2: Обработчик для всех кнопок "Открыть"
-            resultDiv.querySelectorAll('.log-cloud-btn-open').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const url = btn.dataset.url || sheetUrl;
-                    window.open(url, '_blank');
-                });
-            });
-            
-            copyBtn.addEventListener('click', async () => {
+
+            // Клик по URL для копирования
+            const urlText = resultDiv.querySelector('[id^="log-url-text"]');
+            urlText.addEventListener('click', async () => {
                 try {
-                    await navigator.clipboard.writeText(allUrls);
-                    copyBtn.innerHTML = '✓ Скопировано!';
-                    copyBtn.classList.add('copied');
+                    await navigator.clipboard.writeText(sheetUrl);
+                    urlText.style.background = '#2e7d32';
+                    urlText.textContent = '✓ Скопировано!';
                     setTimeout(() => {
-                        copyBtn.innerHTML = hasMultiple ? '📋 Копировать все ссылки' : '📋 Копировать ссылку';
-                        copyBtn.classList.remove('copied');
-                    }, 2000);
+                        urlText.style.background = '';
+                        urlText.textContent = sheetUrl;
+                    }, 1500);
                 } catch (e) {
+                    // fallback
                     const textarea = document.createElement('textarea');
-                    textarea.value = allUrls;
+                    textarea.value = sheetUrl;
                     document.body.appendChild(textarea);
                     textarea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textarea);
-                    copyBtn.innerHTML = '✓ Скопировано!';
-                    copyBtn.classList.add('copied');
-                    setTimeout(() => {
-                        copyBtn.innerHTML = '📋 Копировать ссылку';
-                        copyBtn.classList.remove('copied');
-                    }, 2000);
+                    urlText.textContent = '✓ Скопировано!';
+                    setTimeout(() => { urlText.textContent = sheetUrl; }, 1500);
                 }
             });
+
+            // Кнопка открывает историю облачных ТЗ
+            const openBtn = resultDiv.querySelector('[id^="log-open-btn"]');
+            openBtn.addEventListener('click', () => this.openAutomationHistoryModal('cloud'));
         }
-        
+
         // Подготовка данных для Google Sheets
         prepareCloudData(tasksToProcess = null) {
             const tasks = tasksToProcess || this.tasks;
             const templates = loadTemplates();
             const taskTypes = loadTaskTypes();
             const rocketMapping = loadRocketChatMapping();
-            
+
             const cleanUrl = (url) => {
                 if (!url) return '';
                 return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
             };
-            
+
             return tasks.map((task, index) => {
                 const domain = cleanUrl(task.domain);
                 const oldSub = cleanUrl(task.oldSub);
                 const newSub = cleanUrl(task.newSub);
                 const alternateDomain = cleanUrl(task.alternateDomain);
-                
+
                 // Ответственный
                 let assigneeName = '';
                 if (task.assignee && rocketMapping[task.assignee]) {
                     const data = rocketMapping[task.assignee];
                     assigneeName = typeof data === 'object' ? (data.asanaName || data.name) : data;
                 }
-                
+
                 // hreflang код
                 const hreflangTemplate = task.templateIndex !== '' && task.templateIndex !== undefined ? templates[task.templateIndex] : null;
                 let hreflangCode = '';
@@ -5821,18 +5982,18 @@ https://{{alternateDomain}}/
                         .replace(/\{\{newSub\}\}/g, newSub)
                         .replace(/\{\{domain\}\}/g, domain);
                 }
-                
+
                 // Получаем шаблон ТЗ
                 const taskTypesArr = Object.values(taskTypes);
                 const matchedType = taskTypesArr.find(t => t.name === task.taskName);
-                
+
                 let tzContent = '';
-                
+
                 if (matchedType) {
                     // Тип задачи из настроек - используем шаблон
                     const taskType = taskTypes[matchedType.id];
                     tzContent = taskType.tzTemplate || '';
-                    
+
                     // v4.5.2: Формируем список подзадач с полной информацией
                     const subtasksList = (task.subtasks || [])
                         .filter(s => s.name && s.name.trim())
@@ -5850,7 +6011,7 @@ https://{{alternateDomain}}/
                             return line;
                         })
                         .join('\n');
-                    
+
                     // Заменяем переменные
                     tzContent = tzContent
                         .replace(/\{\{domain\}\}/g, domain)
@@ -5859,7 +6020,7 @@ https://{{alternateDomain}}/
                         .replace(/\{\{alternateDomain\}\}/g, alternateDomain || oldSub)
                         .replace(/\{\{hreflangCode\}\}/g, hreflangCode)
                         .replace(/\{\{subtasks\}\}/g, subtasksList);
-                    
+
                     // Добавляем подзадачи в конец если они не в шаблоне
                     if (subtasksList && !taskType.tzTemplate?.includes('{{subtasks}}')) {
                         tzContent += '\n\nПодзадачи:\n' + subtasksList;
@@ -5869,7 +6030,7 @@ https://{{alternateDomain}}/
                     const lines = [];
                     lines.push(task.taskName); // Заголовок
                     lines.push(''); // Пустая строка
-                    
+
                     if (task.department) lines.push(`Отдел:\t${task.department}`);
                     if (domain) lines.push(`Домен:\t${domain}`);
                     if (oldSub) lines.push(`Старый поддомен:\t${oldSub}`);
@@ -5893,7 +6054,7 @@ https://{{alternateDomain}}/
                     if (task.amp) lines.push(`AMP:\tДа`);
                     if (assigneeName) lines.push(`Ответственный:\t${assigneeName}`);
                     if (task.notes) lines.push(`Примечания:\t${task.notes}`);
-                    
+
                     // v4.5.2: Подзадачи с полной информацией
                     const subtasksList = (task.subtasks || [])
                         .filter(s => s.name && s.name.trim())
@@ -5915,10 +6076,10 @@ https://{{alternateDomain}}/
                         lines.push('Подзадачи:');
                         subtasksList.forEach(s => lines.push(`•\t${s}`));
                     }
-                    
+
                     tzContent = lines.join('\n');
                 }
-                
+
                 // Добавляем дополнительные поля только для типов из списка
                 if (matchedType) {
                     const additionalInfo = [];
@@ -5929,17 +6090,17 @@ https://{{alternateDomain}}/
                     if (task.priority) additionalInfo.push('Приоритет: ' + task.priority);
                     if (task.cms) additionalInfo.push('CMS: ' + task.cms);
                     if (assigneeName) additionalInfo.push('Ответственный: ' + assigneeName);
-                    
+
                     if (additionalInfo.length > 0) {
                         tzContent += '\n\n--- Дополнительно ---\n' + additionalInfo.join('\n');
                     }
                 }
-                
+
                 // v4.5.2: Формируем имя в формате: домен - задача [ответственный]
                 // Если домен не заполнен (или это просто номер), используем только название задачи
                 const identifier = domain || newSub || oldSub || alternateDomain || '';
                 const taskLabel = task.taskName || 'задача';
-                
+
                 let sheetName;
                 if (identifier && !/^\d+$/.test(identifier)) {
                     // Есть реальный домен/поддомен
@@ -5948,11 +6109,11 @@ https://{{alternateDomain}}/
                     // Только название задачи
                     sheetName = taskLabel;
                 }
-                
+
                 if (assigneeName) {
                     sheetName += ` [${assigneeName}]`;
                 }
-                
+
                 return {
                     sheetName: sheetName,
                     taskName: task.taskName,
@@ -5966,7 +6127,7 @@ https://{{alternateDomain}}/
                 };
             });
         }
-        
+
         // Отправка в Google Sheets через Apps Script
         async sendToGoogleSheets(scriptUrl, data) {
             return new Promise((resolve, reject) => {
@@ -5975,25 +6136,26 @@ https://{{alternateDomain}}/
                     url: scriptUrl,
                     headers: { 'Content-Type': 'application/json' },
                     data: JSON.stringify({ tasks: data }),
+                    timeout: 120000,  // v4.5.5: 2 минуты таймаут
                     onload: (response) => {
                         if(DEBUG) console.log('Google response:', response.status, response.responseText?.substring(0, 500));
-                        
+
                         // Проверяем статус
                         if (response.status === 0) {
                             reject(new Error('Нет ответа от сервера. Проверьте URL и доступ.'));
                             return;
                         }
-                        
+
                         if (response.status === 401 || response.status === 403) {
                             reject(new Error('Ошибка авторизации. Проверьте настройки Web App: "Who has access: Anyone"'));
                             return;
                         }
-                        
+
                         if (response.status >= 400) {
                             reject(new Error(`HTTP ошибка ${response.status}`));
                             return;
                         }
-                        
+
                         try {
                             const result = JSON.parse(response.responseText);
                             if (result.error) {
@@ -6021,7 +6183,7 @@ https://{{alternateDomain}}/
                 });
             });
         }
-        
+
         // v4.5.0: Отправка в Microsoft Excel через Power Automate
         async sendToPowerAutomate(webhookUrl, data) {
             return new Promise((resolve, reject) => {
@@ -6029,7 +6191,7 @@ https://{{alternateDomain}}/
                     method: 'POST',
                     url: webhookUrl,
                     headers: { 'Content-Type': 'application/json' },
-                    data: JSON.stringify({ 
+                    data: JSON.stringify({
                         tasks: data,
                         timestamp: new Date().toISOString(),
                         filename: `TZ_${new Date().toISOString().split('T')[0]}.xlsx`
@@ -6050,14 +6212,14 @@ https://{{alternateDomain}}/
                                         message: response.responseText
                                     };
                                 }
-                                
+
                                 // Если URL не пришёл, делаем успех без URL
                                 if (!result.sheetUrl && result.success !== false) {
                                     result.success = true;
                                     result.sheetUrl = 'https://onedrive.live.com'; // Fallback
                                     result.message = 'Файл создан в OneDrive (откройте вручную)';
                                 }
-                                
+
                                 resolve(result);
                             } else {
                                 reject(new Error(`HTTP ${response.status}: ${response.responseText}`));
@@ -6070,7 +6232,7 @@ https://{{alternateDomain}}/
                 });
             });
         }
-        
+
         // Отправка пинга в Rocket.Chat
         async sendRocketPing(username, task, sheetUrl) {
             // v4.5.0: Сначала проверяем сохранённый URL, потом CONFIG
@@ -6078,14 +6240,14 @@ https://{{alternateDomain}}/
             if (!webhookUrl) {
                 throw new Error('Webhook URL не настроен (🔧 → Облако)');
             }
-            
+
             const message = `📋 *Новое ТЗ*\n` +
                 `*Задача:* ${task.taskName || 'Без названия'}\n` +
                 `*Домен:* ${task.domain}\n` +
                 `${task.oldSub ? `*Старый:* ${task.oldSub}\n` : ''}` +
                 `${task.newSub ? `*Новый:* ${task.newSub}\n` : ''}` +
                 `🔗 [Открыть ТЗ](${sheetUrl})`;
-            
+
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: 'POST',
@@ -6106,7 +6268,7 @@ https://{{alternateDomain}}/
                 });
             });
         }
-        
+
         // v4.5.0: Открыть объединённое модальное окно настроек
         openUnifiedSettingsModal() {
             const modal = new FieldConfigModal(this.shadowRoot, () => {
@@ -6119,7 +6281,7 @@ https://{{alternateDomain}}/
         addTask() {
             if(DEBUG) console.log('addTask вызван');
             const templates = loadTemplates();
-            
+
             // v4.5.2: Собираем закреплённые подзадачи из всех отделов
             const subtaskTemplates = loadSubtaskTemplates();
             const pinnedSubtasks = [];
@@ -6137,7 +6299,7 @@ https://{{alternateDomain}}/
                     });
                 }
             });
-            
+
             this.tasks.push({
                 id: this.taskIdCounter++,
                 taskName: '',  // v4.5.0: пустое по умолчанию
@@ -6183,16 +6345,18 @@ https://{{alternateDomain}}/
             if (!this.tasks.length) return;
             // Удаляем без подтверждения, т.к. браузерный confirm может быть заблокирован
             this.tasks = [];
+            this.taskIdCounter = 1;  // v4.5.5: сброс счётчика
             this.renderTasksTable();
             this.updateTasksCount();
+            showToast('🗑️ Таблица очищена', 'info', 2000);
         }
-        
+
         // v4.5.2: Получить ID выбранных задач
         getSelectedTaskIds() {
             const checkboxes = this.shadowRoot.querySelectorAll('.task-select-checkbox:checked');
             return Array.from(checkboxes).map(cb => parseInt(cb.dataset.taskId));
         }
-        
+
         // v4.5.2: Получить выбранные задачи (пустой массив если ничего не выбрано)
         getSelectedTasks() {
             const selectedIds = this.getSelectedTaskIds();
@@ -6201,7 +6365,7 @@ https://{{alternateDomain}}/
             }
             return this.tasks.filter(t => selectedIds.includes(t.id));
         }
-        
+
         // v4.5.2: Обновить счётчик выбранных
         updateSelectedCount() {
             const selectedIds = this.getSelectedTaskIds();
@@ -6210,7 +6374,7 @@ https://{{alternateDomain}}/
                 countSpan.textContent = selectedIds.length > 0 ? `(${selectedIds.length})` : '';
             }
         }
-        
+
         // v4.5.2: Удалить только выбранные задачи
         clearSelectedTasks() {
             const selectedIds = this.getSelectedTaskIds();
@@ -6255,33 +6419,33 @@ https://{{alternateDomain}}/
             if(PROFILE) console.time('  loadTemplates');
             const templates = loadTemplates();
             if(PROFILE) console.timeEnd('  loadTemplates');
-            
+
             if(PROFILE) console.time('  loadRocketChatMapping');
             const rocketMapping = loadRocketChatMapping();
             if(PROFILE) console.timeEnd('  loadRocketChatMapping');
-            
+
             if(PROFILE) console.time('  loadTaskTypes');
             const taskTypes = loadTaskTypes();
             if(PROFILE) console.timeEnd('  loadTaskTypes');
-            
+
             // v4.5.2 PERF: Загружаем базу один раз для всех задач
             if(PROFILE) console.time('  loadSitesDatabase');
             const sitesDb = loadSitesDatabase();
             if(PROFILE) console.timeEnd('  loadSitesDatabase');
-            
+
             // v4.5.0: Собираем обязательные поля из всех шаблонов задач в таблице
             const requiredFields = new Set(); // Только из шаблонов
-            
+
             this.tasks.forEach(task => {
                 // Определяем тип задачи
                 let taskTypeId = 'subdomain';
                 const taskTypesArr = Object.values(taskTypes);
                 const matchedType = taskTypesArr.find(t => t.name === task.taskName);
                 if (matchedType) taskTypeId = matchedType.id;
-                
+
                 const taskType = taskTypes[taskTypeId] || DEFAULT_TASK_TYPES['subdomain'];
                 const tzTemplate = taskType?.tzTemplate || '';
-                
+
                 // Извлекаем переменные из шаблона
                 const matches = tzTemplate.match(/\{\{(\w+)\}\}/g) || [];
                 matches.forEach(m => {
@@ -6289,7 +6453,7 @@ https://{{alternateDomain}}/
                     requiredFields.add(varName);
                 });
             });
-            
+
             // Маппинг переменных к колонкам
             const fieldToColumn = {
                 'taskName': 'Задача',
@@ -6303,14 +6467,14 @@ https://{{alternateDomain}}/
                 'cms': 'CMS',
                 'assignee': 'Ответственный'
             };
-            
+
             // Функция добавления звёздочки
             const mark = (field, label) => {
-                return requiredFields.has(field) 
-                    ? `${label}<span class="required-mark">*</span>` 
+                return requiredFields.has(field)
+                    ? `${label}<span class="required-mark">*</span>`
                     : label;
             };
-            
+
             container.innerHTML = `
                 <div class="tasks-table">
                     <div class="table-header">
@@ -6345,10 +6509,10 @@ https://{{alternateDomain}}/
             // v4.5.2 PERF: Используем переданные данные вместо повторной загрузки
             if (!taskTypes) taskTypes = loadTaskTypes();
             if (!sitesDb) sitesDb = loadSitesDatabase();
-            
+
             const taskTypesArr = Object.values(taskTypes);
             const matchedType = taskTypesArr.find(t => t.name === task.taskName);
-            
+
             // Извлекаем обязательные переменные из шаблона ТОЛЬКО для известных типов
             const requiredVars = new Set();
             if (matchedType) {
@@ -6360,33 +6524,33 @@ https://{{alternateDomain}}/
                     requiredVars.add(varName);
                 });
             }
-            
+
             // Функция проверки пустого обязательного поля
             const isRequiredEmpty = (fieldName, value) => {
                 if (!requiredVars.has(fieldName)) return false;
                 const cleanValue = value ? value.toString().trim().replace(/^https?:\/\//, '').replace(/\/+$/, '') : '';
                 return !cleanValue;
             };
-            
+
             // v4.5.2: Валидация - красная рамка ТОЛЬКО при www-mismatch (несовпадение www)
             const domainVal = validateWithDatabase('domain', '', task.domain, sitesDb);
-            let domainInputClass = domainVal.status === 'valid' ? 'input-valid' : 
+            let domainInputClass = domainVal.status === 'valid' ? 'input-valid' :
                                     (domainVal.status === 'www-mismatch' ? 'input-error' : '');
             if (isRequiredEmpty('domain', task.domain)) domainInputClass += ' input-required-empty';
             const domainTitle = domainVal.message || '';
-            
+
             const oldSubVal = validateWithDatabase('oldSub', task.domain, task.oldSub, sitesDb);
             let oldSubInputClass = oldSubVal.status === 'valid' ? 'input-valid' :
                                     (oldSubVal.status === 'www-mismatch' ? 'input-error' : '');
             if (isRequiredEmpty('oldSub', task.oldSub)) oldSubInputClass += ' input-required-empty';
             const oldSubTitle = oldSubVal.message || '';
-            
+
             const newSubVal = validateWithDatabase('newSub', task.domain, task.newSub, sitesDb);
             let newSubInputClass = newSubVal.status === 'valid' ? 'input-valid' :
                                     (newSubVal.status === 'www-mismatch' ? 'input-error' : '');
             if (isRequiredEmpty('newSub', task.newSub)) newSubInputClass += ' input-required-empty';
             const newSubTitle = newSubVal.message || '';
-            
+
             // v4.5.2: Проверяем все остальные поля из шаблона
             const taskNameClass = '';  // taskName не подсвечиваем - это поле выбора типа
             const departmentClass = isRequiredEmpty('department', task.department) ? 'input-required-empty' : '';
@@ -6395,17 +6559,17 @@ https://{{alternateDomain}}/
             const priorityClass = isRequiredEmpty('priority', task.priority) ? 'input-required-empty' : '';
             const cmsClass = isRequiredEmpty('cms', task.cms) ? 'input-required-empty' : '';
             const assigneeClass = isRequiredEmpty('assignee', task.assignee) ? 'input-required-empty' : '';
-            
+
             return `
                 <div class="task-row" data-task-id="${task.id}">
                     <div class="cell-checkbox"><input type="checkbox" class="task-select-checkbox" data-task-id="${task.id}"></div>
                     <div class="cell-num">${index + 1}</div>
                     <div class="cell-task">
                         <div class="cell-task-wrapper">
-                            <input type="text" 
-                                   list="${matchedType ? '' : 'task-types-list-' + task.id}" 
-                                   value="${task.taskName}" 
-                                   data-field="taskName" 
+                            <input type="text"
+                                   list="${matchedType ? '' : 'task-types-list-' + task.id}"
+                                   value="${task.taskName}"
+                                   data-field="taskName"
                                    class="${taskNameClass}"
                                    placeholder="Выберите или введите"
                                    ${matchedType ? 'readonly' : ''}
@@ -6539,7 +6703,7 @@ https://{{alternateDomain}}/
             if (!domain) return '';
             const db = loadSitesDatabase();
             const normalized = normalizeDomain(domain);
-            
+
             // Ищем домен в базе
             let site = db[domain];
             if (!site) {
@@ -6550,21 +6714,21 @@ https://{{alternateDomain}}/
                     }
                 }
             }
-            
+
             if (!site || !site.oldSubdomains || site.oldSubdomains.length === 0) {
                 return '';
             }
-            
+
             return site.oldSubdomains.map(s => `<option value="${s.url}" data-action="${s.action}">`).join('');
         }
 
         // FIX v4.1.9: Проверка oldSub с базой (www, наличие в истории)
         validateOldSubWithDatabase(domain, oldSub) {
             if (!domain || !oldSub) return { valid: true, inHistory: false };
-            
+
             const db = loadSitesDatabase();
             const normalized = normalizeDomain(domain);
-            
+
             let site = db[domain];
             if (!site) {
                 for (const d in db) {
@@ -6574,19 +6738,19 @@ https://{{alternateDomain}}/
                     }
                 }
             }
-            
+
             if (!site || !site.oldSubdomains) {
                 return { valid: true, inHistory: false, message: 'Новый поддомен (не в истории)' };
             }
-            
+
             const normalizedOldSub = normalizeDomain(oldSub);
             const found = site.oldSubdomains.find(s => normalizeDomain(s.url) === normalizedOldSub);
-            
+
             if (found) {
                 // Проверяем www
                 const inputHasWww = oldSub.toLowerCase().replace(/^https?:\/\//, '').startsWith('www.');
                 const dbHasWww = found.url.toLowerCase().replace(/^https?:\/\//, '').startsWith('www.');
-                
+
                 if (inputHasWww !== dbHasWww) {
                     return {
                         valid: true,
@@ -6597,7 +6761,7 @@ https://{{alternateDomain}}/
                         message: `В базе: ${found.url} (${dbHasWww ? 'с www' : 'без www'})`
                     };
                 }
-                
+
                 return {
                     valid: true,
                     inHistory: true,
@@ -6607,7 +6771,7 @@ https://{{alternateDomain}}/
                     message: `Найден в истории (action: ${found.action})`
                 };
             }
-            
+
             return { valid: true, inHistory: false, message: 'Новый поддомен (не в истории)' };
         }
 
@@ -6624,15 +6788,15 @@ https://{{alternateDomain}}/
         // FIX v4.1.7: Валидация домена в массовом режиме
         validateDomainInMassMode(domain) {
             if (!domain) return { valid: false, inDatabase: false, message: '' };
-            
+
             const db = loadSitesDatabase();
             const normalized = normalizeDomain(domain);
-            
+
             // Точное совпадение
             if (db[domain] && db[domain].status === 'active') {
                 return { valid: true, inDatabase: true, exactMatch: true, dbDomain: domain };
             }
-            
+
             // Поиск с нормализацией (www, без www)
             for (const dbDomain in db) {
                 if (db[dbDomain].status !== 'active') continue;
@@ -6653,7 +6817,7 @@ https://{{alternateDomain}}/
                     return { valid: true, inDatabase: true, exactMatch: true, dbDomain: dbDomain };
                 }
             }
-            
+
             // Не найден в базе
             return { valid: false, inDatabase: false, message: 'Домен не найден в базе!' };
         }
@@ -6661,38 +6825,38 @@ https://{{alternateDomain}}/
         // FIX v4.1.6: Проверка newSub с базой (www, протокол)
         validateNewSubWithDatabase(domain, newSub) {
             if (!domain || !newSub) return { valid: true };
-            
+
             const db = loadSitesDatabase();
             const site = db[normalizeDomain(domain)] || db[domain];
             if (!site || !site.currentSubdomain) return { valid: true };
-            
+
             const dbSub = site.currentSubdomain;
-            
+
             const getProtocol = (url) => {
                 if (url.startsWith('https://')) return 'https';
                 if (url.startsWith('http://')) return 'http';
                 return '';
             };
-            
+
             const hasWww = (url) => {
                 return url.replace(/^https?:\/\//, '').startsWith('www.');
             };
-            
+
             const dbProtocol = getProtocol(dbSub);
             const newProtocol = getProtocol(newSub);
             const dbHasWww = hasWww(dbSub);
             const newHasWww = hasWww(newSub);
-            
+
             const warnings = [];
-            
+
             if (dbProtocol && newProtocol && dbProtocol !== newProtocol) {
                 warnings.push(`Протокол: база ${dbProtocol}, введено ${newProtocol}`);
             }
-            
+
             if (dbHasWww !== newHasWww) {
                 warnings.push(`WWW: база ${dbHasWww ? 'с www' : 'без www'}, введено ${newHasWww ? 'с www' : 'без www'}`);
             }
-            
+
             return {
                 valid: warnings.length === 0,
                 warnings: warnings,
@@ -6708,7 +6872,7 @@ https://{{alternateDomain}}/
             // Ищем по имени в кеше
             const cache = loadTeamMembersFromCache();
             if (cache.data && cache.data.length > 0) {
-                const member = cache.data.find(m => 
+                const member = cache.data.find(m =>
                     m.name && m.name.toLowerCase() === value.toLowerCase()
                 );
                 if (member) return member.gid;
@@ -6733,7 +6897,7 @@ https://{{alternateDomain}}/
                     this.updateSelectedCount();
                 });
             }
-            
+
             // v4.5.2: Обработчик для индивидуальных чекбоксов
             table.querySelectorAll('.task-select-checkbox').forEach(cb => {
                 cb.addEventListener('change', () => {
@@ -6757,56 +6921,56 @@ https://{{alternateDomain}}/
                     const row = e.target.closest('.task-row');
                     const taskId = parseInt(row.dataset.taskId);
                     const field = e.target.dataset.field;
-                    
+
                     // v4.3.0: Показываем автокомплит при вводе
                     if (field === 'domain' || field === 'oldSub' || field === 'newSub') {
                         this.showMassAutocomplete(taskId, field);
                     }
                 });
-                
+
                 // v4.3.0: Показываем автокомплит при фокусе
                 el.addEventListener('focus', (e) => {
                     e.stopPropagation();
                     const row = e.target.closest('.task-row');
                     const taskId = parseInt(row.dataset.taskId);
                     const field = e.target.dataset.field;
-                    
+
                     if (field === 'domain' || field === 'oldSub' || field === 'newSub') {
                         this.showMassAutocomplete(taskId, field);
                     }
                 });
-                
+
                 // v4.3.0: Скрываем автокомплит при blur
                 el.addEventListener('blur', (e) => {
                     e.stopPropagation();
                     const row = e.target.closest('.task-row');
                     const taskId = parseInt(row.dataset.taskId);
                     const field = e.target.dataset.field;
-                    
+
                     if (field === 'domain' || field === 'oldSub' || field === 'newSub') {
                         setTimeout(() => this.hideMassAutocomplete(taskId, field), 200);
                     }
                 });
-                
+
                 el.addEventListener('change', (e) => {
                     e.stopPropagation();
                     const row = e.target.closest('.task-row');
                     const taskId = parseInt(row.dataset.taskId);
                     const field = e.target.dataset.field;
                     let value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-                    
+
                     this.updateTaskField(taskId, field, value);
-                    
+
                     // v4.5.2: При выборе типа задачи - перерендерить строку для обновления индикации
                     if (field === 'taskName') {
                         this.renderTasksTable();
                         return;
                     }
-                    
+
                     // v4.2.3: Унифицированная валидация при изменении любого поля
                     if (field === 'domain' || field === 'oldSub' || field === 'newSub') {
                         this.validateMassInput(taskId, field);
-                        
+
                         // При смене домена перевалидируем oldSub и newSub
                         if (field === 'domain') {
                             this.validateMassInput(taskId, 'oldSub');
@@ -6823,11 +6987,11 @@ https://{{alternateDomain}}/
                 table.addEventListener('click', (e) => {
                     const actionEl = e.target.closest('[data-action]');
                     if (!actionEl) return;
-                    
+
                     e.stopPropagation();
                     const row = actionEl.closest('.task-row');
                     if (!row) return;
-                    
+
                     const taskId = parseInt(row.dataset.taskId);
                     const action = actionEl.dataset.action;
                     this.handleTaskAction(taskId, action, actionEl);
@@ -6839,19 +7003,19 @@ https://{{alternateDomain}}/
         showMassAutocomplete(taskId, field) {
             const task = this.tasks.find(t => t.id === taskId);
             if (!task) return;
-            
+
             const row = this.shadowRoot.querySelector(`.task-row[data-task-id="${taskId}"]`);
             if (!row) return;
-            
+
             const input = row.querySelector(`input[data-field="${field}"]`);
             const autocompleteDiv = this.shadowRoot.getElementById(`${field}-autocomplete-${taskId}`);
             if (!input || !autocompleteDiv) return;
-            
+
             const value = input.value.trim();
             autocompleteDiv.innerHTML = '';
-            
+
             let items = [];
-            
+
             if (field === 'domain') {
                 if (value.length < 1) {
                     this.hideMassAutocomplete(taskId, field);
@@ -6924,7 +7088,7 @@ https://{{alternateDomain}}/
                 }
                 if(DEBUG) console.log('━━━━━━━━━━━━━━━━━━━━━━━');
             }
-            
+
             if (items.length > 0) {
                 items.forEach(item => {
                     const itemDiv = document.createElement('div');
@@ -6946,7 +7110,7 @@ https://{{alternateDomain}}/
                         this.updateTaskField(taskId, field, item.value);
                         this.hideMassAutocomplete(taskId, field);
                         this.validateMassInput(taskId, field);
-                        
+
                         // При выборе домена автозаполняем отдел
                         if (field === 'domain' && item.data && item.data.department) {
                             const deptSelect = row.querySelector('select[data-field="department"]');
@@ -6955,7 +7119,7 @@ https://{{alternateDomain}}/
                                 this.updateTaskField(taskId, 'department', item.data.department);
                             }
                         }
-                        
+
                         // v4.3.7: При выборе oldSub устанавливаем флаги редиректа
                         if (field === 'oldSub' && item.data && item.data.action) {
                             const redirectType = item.data.action || '301';
@@ -6992,7 +7156,7 @@ https://{{alternateDomain}}/
                 this.hideMassAutocomplete(taskId, field);
             }
         }
-        
+
         hideMassAutocomplete(taskId, field) {
             const autocompleteDiv = this.shadowRoot.getElementById(`${field}-autocomplete-${taskId}`);
             if (autocompleteDiv) {
@@ -7004,32 +7168,32 @@ https://{{alternateDomain}}/
         validateMassInput(taskId, field) {
             const task = this.tasks.find(t => t.id === taskId);
             if (!task) return;
-            
+
             const row = this.shadowRoot.querySelector(`.task-row[data-task-id="${taskId}"]`);
             if (!row) return;
-            
+
             const input = row.querySelector(`input[data-field="${field}"]`);
             if (!input) return;
-            
+
             const value = input.value.trim();
             const parent = input.closest('.cell-with-btn') || input.parentElement;
-            
+
             // Убираем старые классы и tooltip
             input.classList.remove('input-valid', 'input-error');
             const oldTooltip = parent.querySelector('.input-warning-tooltip');
             if (oldTooltip) oldTooltip.remove();
-            
+
             if (!value) {
                 input.title = '';
                 return;
             }
-            
+
             // Определяем тип и домен для валидации
             const type = field; // 'domain', 'oldSub', 'newSub'
             const relatedDomain = (type === 'domain') ? '' : task.domain;
-            
+
             const validation = validateWithDatabase(type, relatedDomain, value);
-            
+
             // v4.3.2: Единая логика для всех полей - красная рамка при not-found или www-mismatch
             if (validation.status === 'valid') {
                 input.classList.add('input-valid');
@@ -7051,7 +7215,7 @@ https://{{alternateDomain}}/
                 input.title = '';
             }
         }
-        
+
         // Deprecated - оставлено для совместимости
         updateWwwWarning(taskId) {
             // Теперь вызываем унифицированную валидацию
@@ -7091,7 +7255,7 @@ https://{{alternateDomain}}/
                     break;
             }
         }
-        
+
         // v4.3.7: Popup для просмотра подзадач
         showSubtasksPopup(taskId) {
             const task = this.tasks.find(t => t.id === taskId);
@@ -7099,14 +7263,14 @@ https://{{alternateDomain}}/
                 showToast('Нет подзадач');
                 return;
             }
-            
-            const list = task.subtasks.map((s, i) => 
+
+            const list = task.subtasks.map((s, i) =>
                 `${i + 1}. ${s.name} (${s.priority}, ${s.allocation}%)`
             ).join('\n');
-            
+
             showToast(`Подзадачи для "${task.taskName}":\n\n${list}`);
         }
-        
+
         // v4.3.5: Модальное окно управления поддоменами для массового режима
         openMassSubdomainManagerModal(taskId) {
             const task = this.tasks.find(t => t.id === taskId);
@@ -7114,12 +7278,12 @@ https://{{alternateDomain}}/
                 showToast('Сначала укажите домен для этой задачи');
                 return;
             }
-            
+
             // Временно устанавливаем домен в поле одиночного режима для работы модалки
             const domainInput = this.shadowRoot.getElementById('domain');
             const originalValue = domainInput.value;
             domainInput.value = task.domain;
-            
+
             // v4.3.7: Передаём taskId для обновления правильного поля
             this.openSubdomainManagerModal('oldSub', taskId);
         }
@@ -7127,7 +7291,7 @@ https://{{alternateDomain}}/
         openTaskSubtasksModal(taskId) {
             const task = this.tasks.find(t => t.id === taskId);
             if (!task) return;
-            
+
             // Создаём модальное окно для редактирования подзадач
             const modal = new TaskSubtasksEditorModal(this.shadowRoot, task, (updatedSubtasks) => {
                 task.subtasks = updatedSubtasks;
@@ -7184,7 +7348,7 @@ https://{{alternateDomain}}/
 
                     // Добавляем в историю
                     addToHistory(task.domain, task.oldSub);
-                    
+
                     // FIX v4.1.8: Автообновление базы сайтов
                     updateSiteAfterTask(task.domain, {
                         department: task.department,
@@ -7286,20 +7450,20 @@ https://{{alternateDomain}}/
 
         generateTZ(task) {
             const templates = loadTemplates();
-            
+
             // Функция очистки URL
             const cleanUrl = (url) => {
                 if (!url) return '';
                 return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
             };
-            
+
             // Очищаем данные
             const domain = cleanUrl(task.domain);
             const oldSub = cleanUrl(task.oldSub);
             const newSub = cleanUrl(task.newSub);
-            
+
             const hreflangTemplate = task.templateIndex !== '' ? templates[task.templateIndex] : null;
-            
+
             // Генерируем hreflang код
             let hreflangCode = '';
             if (hreflangTemplate) {
@@ -7321,7 +7485,7 @@ https://{{alternateDomain}}/
 
             // Формируем ТЗ согласно шаблону
             let desc = '';
-            
+
             // Блок 1: 301 редирект (если выбран)
             if (task.redirect301) {
                 desc += `Если есть 301 редирект:
@@ -7330,7 +7494,7 @@ https://{{alternateDomain}}/
 
 `;
             }
-            
+
             // Блок 2: 404 для страниц
             desc += `2) Отдать 404 для страниц:
 https://${domain}/page/
@@ -7338,7 +7502,7 @@ https://${oldSub}/
 https://${domain}/hreflang/ (может быть несколько) и
 
 `;
-            
+
             // Блок 3: Домен подмены
             desc += `Если есть домен-подмена:
 
@@ -7346,27 +7510,27 @@ https://${domain}/hreflang/ (может быть несколько) и
 https://${oldSub}/
 
 `;
-            
+
             // Блок 4: Создать страницу на дропе
             desc += `4) Создать страницу на дропе (дубль главной):
 https://${newSub}/
 
 `;
-            
+
             // Блок 5: Канониклы и хрефланги
             desc += `5) На главной странице и внутряке (https://${domain}/ и https://${newSub}/) прописать канониклы и хрефланги:
 ${hreflangCode}
 Меняем старые канониклы и хрефланги на новые
 
 `;
-            
+
             // Блок 6: Актуализировать ссылки
             desc += `Если надо:
 
 6) Актуализировать ссылки в (выбрать одно или несколько: футере, хедере, боковом меню, sitemap)
 
 `;
-            
+
             // Блок 7: Важная плашка
             desc += `Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`;
 
@@ -7380,11 +7544,15 @@ ${hreflangCode}
             input.onchange = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
+                
+                // v4.5.5: Показываем какой файл импортируем
+                showToast(`📂 Загрузка: ${file.name}`, 'info', 2000);
+                
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     try {
                         const workbook = XLSX.read(ev.target.result, { type: 'array' });
-                        
+
                         // v4.5.2: Поиск листа по имени (приоритет) или по индексу (fallback)
                         const findSheet = (names) => {
                             for (const name of names) {
@@ -7392,21 +7560,21 @@ ${hreflangCode}
                             }
                             return null;
                         };
-                        
+
                         // Лист Задачи - ищем по имени или берём первый
                         const tasksSheet = findSheet(['Задачи', 'Tasks', 'задачи']) || workbook.Sheets[workbook.SheetNames[0]];
                         const tasksData = XLSX.utils.sheet_to_json(tasksSheet, { header: 1 });
-                        
+
                         if (tasksData.length < 2) {
                             showToast('Файл пуст или неверный формат');
                             return;
                         }
-                        
+
                         // v4.5.0: Умное сопоставление колонок через FIELD_REGISTRY
                         const headers = tasksData[0];
                         const columnMapping = {}; // { fieldId: columnIndex }
                         const unmappedColumns = [];
-                        
+
                         headers.forEach((header, index) => {
                             const fieldId = matchColumnToField(header);
                             if (fieldId) {
@@ -7415,14 +7583,14 @@ ${hreflangCode}
                                 unmappedColumns.push(String(header).trim());
                             }
                         });
-                        
+
                         if (DEBUG) {
                             console.log('Column mapping:', columnMapping);
                             if (unmappedColumns.length) console.log('Unmapped columns:', unmappedColumns);
                         }
-                        
+
                         const importedTasks = [];
-                        
+
                         // v4.5.2: Пропускаем строку подсказок (содержит "example.com", "1,2,3", "Тип задачи" и т.д.)
                         const isHintRow = (row) => {
                             if (!row) return false;
@@ -7432,20 +7600,20 @@ ${hreflangCode}
                             const hasTypeHint = row.some(cell => String(cell || '').toLowerCase() === 'тип задачи');
                             return hasExampleDomain || hasHintMarkers || hasTypeHint;
                         };
-                        
+
                         const startRow = isHintRow(tasksData[1]) ? 2 : 1;
-                        
+
                         for (let i = startRow; i < tasksData.length; i++) {
                             const row = tasksData[i];
                             if (!row || row.every(cell => !cell)) continue; // пропускаем пустые строки
                             if (isHintRow(row)) continue; // пропускаем строки-подсказки
-                            
+
                             // Функция получения значения по fieldId
                             const getVal = (fieldId) => {
                                 const idx = columnMapping[fieldId];
                                 return idx !== undefined && row[idx] !== undefined ? String(row[idx]).trim() : '';
                             };
-                            
+
                             // Парсим redirect
                             let redirect301 = false, redirect404 = false;
                             const redirectVal = getVal('redirect');
@@ -7454,11 +7622,11 @@ ${hreflangCode}
                             } else if (redirectVal === '404') {
                                 redirect404 = true;
                             }
-                            
+
                             // v4.5.0: Парсим hreflang через parseHreflangGeo
                             const hreflangVal = getVal('hreflang');
                             const templateIndex = parseHreflangGeo(hreflangVal);
-                            
+
                             const task = {
                                 id: this.taskIdCounter++,
                                 taskName: getVal('taskName') || 'Смена поддомена',
@@ -7479,13 +7647,13 @@ ${hreflangCode}
                                 notes: getVal('notes') || '',
                                 subtasks: []
                             };
-                            
+
                             // Пропускаем если нет основных данных
                             if (!task.domain && !task.oldSub && !task.newSub) continue;
-                            
+
                             importedTasks.push(task);
                         }
-                        
+
                         // v4.5.2: Добавляем закреплённые подзадачи ко всем импортированным задачам
                         const subtaskTemplates = loadSubtaskTemplates();
                         const pinnedSubtasks = [];
@@ -7503,7 +7671,7 @@ ${hreflangCode}
                                 });
                             }
                         });
-                        
+
                         if (pinnedSubtasks.length > 0) {
                             importedTasks.forEach(task => {
                                 // Добавляем только те pinned, которых ещё нет
@@ -7515,63 +7683,69 @@ ${hreflangCode}
                                 });
                             });
                         }
-                        
+
                         // Лист Подзадачи - ищем по имени или берём второй
                         const subtasksSheet = findSheet(['Подзадачи', 'Subtasks', 'подзадачи']) || (workbook.SheetNames.length > 1 ? workbook.Sheets[workbook.SheetNames[1]] : null);
                         if (subtasksSheet) {
                             const subtasksData = XLSX.utils.sheet_to_json(subtasksSheet, { header: 1 });
-                            
+
                             if (subtasksData.length > 1) {
                                 const subHeaders = subtasksData[0].map(h => String(h || '').trim().toLowerCase());
-                                
+
                                 // v4.5.2: Пропуск строки подсказок в подзадачах
                                 const isSubHintRow = (row) => {
                                     if (!row) return false;
                                     const firstCell = String(row[0] || '').toLowerCase();
                                     const secondCell = String(row[1] || '').toLowerCase();
-                                    return firstCell.includes('№') || firstCell.includes('задачи') || 
+                                    return firstCell.includes('№') || firstCell.includes('задачи') ||
                                            secondCell.includes('название') || secondCell.includes('high/medium');
                                 };
-                                
+
                                 const startSubRow = isSubHintRow(subtasksData[1]) ? 2 : 1;
-                                
+
                                 for (let i = startSubRow; i < subtasksData.length; i++) {
                                     const row = subtasksData[i];
                                     if (!row || isSubHintRow(row)) continue;
-                                    
+
                                     const getVal = (field) => {
                                         const idx = subHeaders.indexOf(field.toLowerCase());
                                         return idx !== -1 && row[idx] !== undefined ? String(row[idx]).trim() : '';
                                     };
-                                    
+
                                     const taskIndex = parseInt(getVal('taskindex') || getVal('задача')) - 1;
                                     if (isNaN(taskIndex) || taskIndex < 0 || taskIndex >= importedTasks.length) continue;
-                                    
+
                                     const subtask = {
                                         name: getVal('name') || getVal('название') || '',
                                         priority: getVal('priority') || getVal('приоритет') || 'medium',
                                         allocation: parseInt(getVal('percent') || getVal('hours') || getVal('allocation') || getVal('часы')) || 100,
                                         assignee: this.resolveAssignee(getVal('assignee') || getVal('исполнитель') || '')
                                     };
-                                    
+
                                     if (subtask.name) {
                                         importedTasks[taskIndex].subtasks.push(subtask);
                                     }
                                 }
                             }
                         }
-                        
+
+                        // v4.5.5: Импорт ВСЕГДА заменяет таблицу
+                        this.tasks = [];
+                        this.taskIdCounter = 1;
+                        importedTasks.forEach((t, i) => { t.id = i + 1; });
+                        this.taskIdCounter = importedTasks.length + 1;
+
                         importedTasks.forEach(t => this.tasks.push(t));
                         this.renderTasksTable();
                         this.updateTasksCount();
-                        
-                        // v4.5.0: Информативное сообщение об импорте
-                        let msg = `✅ Импортировано ${importedTasks.length} задач`;
+
+                        // v4.5.5: Информативное сообщение об импорте с именем файла
+                        let msg = `✅ ${file.name}\n\nИмпортировано ${importedTasks.length} задач`;
                         if (unmappedColumns.length) {
                             msg += `\n\n⚠️ Нераспознанные колонки: ${unmappedColumns.join(', ')}`;
                         }
-                        showToast(msg, 'success');
-                        
+                        showToast(msg, 'success', 5000);
+
                     } catch (err) {
                         console.error('Import error:', err);
                         showToast('Ошибка чтения файла: ' + err.message);
@@ -7593,11 +7767,11 @@ ${hreflangCode}
             const redirects = ['301', '404', '-'];
             const boolValues = ['true', 'false'];
             const subtaskTemplates = loadSubtaskTemplates();
-            
+
             // Маппинг для конвертации
             const hreflangNames = {};
             hreflangTemplates.forEach((name, i) => { hreflangNames[String(i)] = name; });
-            
+
             const rocketMapping = loadRocketChatMapping();
             const assigneeIdToName = (id) => {
                 if (!id) return '';
@@ -7605,19 +7779,19 @@ ${hreflangCode}
                 if (!data) return id;
                 return typeof data === 'object' ? (data.asanaName || data.name || id) : data;
             };
-            
+
             const teamCache = loadTeamMembersFromCache();
             const gidToName = (gid) => {
                 if (!gid) return '';
                 const member = teamCache.data?.find(m => m.gid === gid);
                 return member ? member.name : gid;
             };
-            
+
             // === СОЗДАНИЕ WORKBOOK С EXCELJS ===
             const wb = new ExcelJS.Workbook();
             wb.creator = 'SEO Subdomain Automation Suite';
             wb.created = new Date();
-            
+
             // Стили
             const headerStyle = {
                 font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 },
@@ -7628,21 +7802,21 @@ ${hreflangCode}
                     left: { style: 'thin' }, right: { style: 'thin' }
                 }
             };
-            
+
             const hintStyle = {
                 font: { italic: true, color: { argb: 'FF999999' }, size: 10 },
                 fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } },
                 alignment: { horizontal: 'center' }
             };
-            
+
             const categoryStyle = {
                 font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 },
                 fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF607D8B' } }
             };
-            
+
             // === ЛИСТ 1: Справочники ===
             const refSheet = wb.addWorksheet('Справочники');
-            
+
             // Собираем названия подзадач из всех шаблонов (по всем ключам)
             const subtaskNames = [];
             const allTemplateKeys = Object.keys(subtaskTemplates);
@@ -7658,20 +7832,20 @@ ${hreflangCode}
             if (subtaskNames.length === 0) {
                 subtaskNames.push('SEO проверка', 'DEV реализация', 'Актуализация ссылок', 'Проверка редиректов', 'Обновление sitemap');
             }
-            
+
             // Генерируем номера задач 1-50
             const taskIndexes = Array.from({length: 50}, (_, i) => i + 1);
-            
+
             const refHeaders = ['Типы задач', 'Отделы', 'Редирект', 'hreflang', 'Приоритет', 'CMS', 'Да/Нет', '№ задачи', 'Подзадачи'];
             const headerRow = refSheet.addRow(refHeaders);
             headerRow.eachCell(cell => { Object.assign(cell, headerStyle); });
-            
+
             const maxLen = Math.max(
                 taskTypeNames.length, departments.length, redirects.length,
                 hreflangTemplates.length, priorities.length, cmsList.length, boolValues.length,
                 taskIndexes.length, subtaskNames.length
             );
-            
+
             for (let i = 0; i < maxLen; i++) {
                 refSheet.addRow([
                     taskTypeNames[i] || '',
@@ -7685,23 +7859,23 @@ ${hreflangCode}
                     subtaskNames[i] || ''
                 ]);
             }
-            
+
             refSheet.columns = [
                 { width: 25 }, { width: 15 }, { width: 10 }, { width: 25 }, { width: 12 }, { width: 15 }, { width: 10 }, { width: 10 }, { width: 30 }
             ];
-            
+
             // === ЛИСТ 2: Задачи ===
             const tasksSheet = wb.addWorksheet('Задачи');
-            
+
             const taskHeaders = ['№', 'taskName', 'department', 'domain', 'oldSub', 'redirect', 'newSub', 'alternateDomain', 'hreflang', 'priority', 'cms', 'dmca', 'amp', 'assignee', 'pingRocket', 'notes'];
             const taskHints = ['1,2,3...', 'Тип задачи', 'Отдел', 'example.com', 'old.example.com', '301/404/-', 'new.example.com', 'alt-domain.com', 'RU/AZ/KZ', 'High/Medium/Low', 'CMS', 'true/false', 'true/false', 'Имя', 'true/false', 'Примечания'];
-            
+
             const taskHeaderRow = tasksSheet.addRow(taskHeaders);
             taskHeaderRow.eachCell(cell => { Object.assign(cell, headerStyle); });
-            
+
             const taskHintRow = tasksSheet.addRow(taskHints);
             taskHintRow.eachCell(cell => { Object.assign(cell, hintStyle); });
-            
+
             // Добавляем задачи если есть
             if (this.tasks.length) {
                 this.tasks.forEach((t, idx) => {
@@ -7727,13 +7901,13 @@ ${hreflangCode}
                     ]);
                 });
             }
-            
+
             tasksSheet.columns = [
                 { width: 5 }, { width: 22 }, { width: 12 }, { width: 22 }, { width: 22 }, { width: 10 },
                 { width: 22 }, { width: 20 }, { width: 20 }, { width: 12 }, { width: 12 }, { width: 8 },
                 { width: 8 }, { width: 18 }, { width: 10 }, { width: 25 }
             ];
-            
+
             // Data Validation (выпадающие списки)
             const taskTypeFormula = `'Справочники'!$A$2:$A$${taskTypeNames.length + 1}`;
             const deptFormula = `'Справочники'!$B$2:$B$${departments.length + 1}`;
@@ -7742,7 +7916,7 @@ ${hreflangCode}
             const priorityFormula = `'Справочники'!$E$2:$E$${priorities.length + 1}`;
             const cmsFormula = `'Справочники'!$F$2:$F$${cmsList.length + 1}`;
             const boolFormula = `'Справочники'!$G$2:$G$3`;
-            
+
             // B: taskName
             tasksSheet.dataValidations.add('B3:B1000', {
                 type: 'list', allowBlank: true, formulae: [taskTypeFormula]
@@ -7779,22 +7953,22 @@ ${hreflangCode}
             tasksSheet.dataValidations.add('O3:O1000', {
                 type: 'list', allowBlank: true, formulae: [boolFormula]
             });
-            
+
             // Закрепляем строки
             tasksSheet.views = [{ state: 'frozen', ySplit: 2 }];
-            
+
             // === ЛИСТ 3: Подзадачи ===
             const subsSheet = wb.addWorksheet('Подзадачи');
-            
+
             const subHeaders = ['taskIndex', 'name', 'priority', 'percent', 'assignee'];
             const subHints = ['№ задачи', 'Название', 'High/Medium/Low', '10-100', 'Имя'];
-            
+
             const subHeaderRow = subsSheet.addRow(subHeaders);
             subHeaderRow.eachCell(cell => { Object.assign(cell, headerStyle); });
-            
+
             const subHintRow = subsSheet.addRow(subHints);
             subHintRow.eachCell(cell => { Object.assign(cell, hintStyle); });
-            
+
             if (this.tasks.length) {
                 this.tasks.forEach((t, idx) => {
                     if (t.subtasks && t.subtasks.length > 0) {
@@ -7810,56 +7984,56 @@ ${hreflangCode}
                     }
                 });
             }
-            
+
             subsSheet.columns = [{ width: 12 }, { width: 40 }, { width: 15 }, { width: 12 }, { width: 20 }];
-            
+
             // taskIndex validation - ссылка на номера из справочников
             const taskIndexFormula = `'Справочники'!$H$2:$H$51`;
             subsSheet.dataValidations.add('A3:A500', {
                 type: 'list', allowBlank: true, formulae: [taskIndexFormula]
             });
-            
+
             // name validation - ссылка на названия подзадач из справочников
             const subtaskNameFormula = `'Справочники'!$I$2:$I$${subtaskNames.length + 1}`;
             subsSheet.dataValidations.add('B3:B500', {
                 type: 'list', allowBlank: true, formulae: [subtaskNameFormula]
             });
-            
+
             // priority validation
             subsSheet.dataValidations.add('C3:C500', {
                 type: 'list', allowBlank: true, formulae: [priorityFormula]
             });
-            
+
             subsSheet.views = [{ state: 'frozen', ySplit: 2 }];
-            
+
             // === ЛИСТ 4: Типовые подзадачи ===
             const typicalSheet = wb.addWorksheet('Типовые подзадачи');
-            
+
             const titleRow = typicalSheet.addRow(['📋 ТИПОВЫЕ ПОДЗАДАЧИ — копируй в лист Подзадачи']);
             titleRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
             titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4CAF50' } };
             typicalSheet.mergeCells('A1:E1');
-            
+
             typicalSheet.addRow([]);
-            
+
             // Группируем по категориям шаблонов (не по отделам)
             let hasTemplates = false;
             for (const key of allTemplateKeys) {
                 const keyTemplates = subtaskTemplates[key];
                 if (!keyTemplates || keyTemplates.length === 0) continue;
-                
+
                 hasTemplates = true;
                 const catRow = typicalSheet.addRow([`📁 ${key}`]);
                 catRow.getCell(1).font = categoryStyle.font;
                 catRow.getCell(1).fill = categoryStyle.fill;
                 typicalSheet.mergeCells(`A${catRow.number}:E${catRow.number}`);
-                
+
                 const subHeadRow = typicalSheet.addRow(['taskIndex', 'name', 'priority', 'percent', 'assignee']);
                 subHeadRow.eachCell(cell => {
                     cell.font = { bold: true, size: 10 };
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                 });
-                
+
                 keyTemplates.forEach(tmpl => {
                     typicalSheet.addRow([
                         '',
@@ -7869,10 +8043,10 @@ ${hreflangCode}
                         ''
                     ]);
                 });
-                
+
                 typicalSheet.addRow([]);
             }
-            
+
             // Добавляем стандартные если нет шаблонов
             if (!hasTemplates) {
                 const defaultTypical = {
@@ -7895,41 +8069,41 @@ ${hreflangCode}
                         ['', 'Проверка скорости', 'Medium', 50, '']
                     ]
                 };
-                
+
                 for (const [cat, items] of Object.entries(defaultTypical)) {
                     const catRow = typicalSheet.addRow([cat]);
                     catRow.getCell(1).font = categoryStyle.font;
                     catRow.getCell(1).fill = categoryStyle.fill;
                     typicalSheet.mergeCells(`A${catRow.number}:E${catRow.number}`);
-                    
+
                     const subHeadRow = typicalSheet.addRow(['taskIndex', 'name', 'priority', 'percent', 'assignee']);
                     subHeadRow.eachCell(cell => {
                         cell.font = { bold: true, size: 10 };
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                     });
-                    
+
                     items.forEach(row => typicalSheet.addRow(row));
                     typicalSheet.addRow([]);
                 }
             }
-            
+
             typicalSheet.columns = [{ width: 12 }, { width: 35 }, { width: 15 }, { width: 12 }, { width: 20 }];
-            
+
             // taskIndex validation для типовых подзадач - ссылка на номера из справочников
             typicalSheet.dataValidations.add('A3:A500', {
                 type: 'list', allowBlank: true, formulae: [taskIndexFormula]
             });
-            
+
             // name validation для типовых подзадач
             typicalSheet.dataValidations.add('B3:B500', {
                 type: 'list', allowBlank: true, formulae: [subtaskNameFormula]
             });
-            
+
             // === СОХРАНЕНИЕ ===
-            const filename = this.tasks.length 
+            const filename = this.tasks.length
                 ? `subdomain_tasks_${new Date().toISOString().slice(0,10)}.xlsx`
                 : `tasks_template_${new Date().toISOString().slice(0,10)}.xlsx`;
-            
+
             const buffer = await wb.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
@@ -7938,7 +8112,7 @@ ${hreflangCode}
             a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-            
+
             if (!this.tasks.length) {
                 showToast(' Экспортирован шаблон с вашими настройками и выпадающими списками');
             }
@@ -7947,7 +8121,13 @@ ${hreflangCode}
         attachEventListeners() {
             const root = this.shadowRoot;
 
-            root.getElementById('close-dashboard').addEventListener('click', () => this.hide());
+            // v4.5.5: Крестик скрывает окно, но не прерывает процессы
+            root.getElementById('close-dashboard').addEventListener('click', () => {
+                if (this.isProcessing) {
+                    showToast('⏳ Процесс продолжается в фоне...', 'info', 3000);
+                }
+                this.hide();
+            });
 
             // Переключатели режимов v4.0
             root.getElementById('mode-btn-single').addEventListener('click', () => this.switchMode('single'));
@@ -8030,33 +8210,33 @@ ${hreflangCode}
 
             // Проверка www при изменении поддоменов
             // v4.3.0: Унифицированные обработчики для oldSub
-            root.getElementById('oldSub').addEventListener('input', (e) => { 
-                e.stopPropagation(); 
+            root.getElementById('oldSub').addEventListener('input', (e) => {
+                e.stopPropagation();
                 this.showFieldAutocomplete('oldSub', 'oldSub');
-                this.checkWwwConsistency(); 
+                this.checkWwwConsistency();
             });
-            root.getElementById('oldSub').addEventListener('focus', (e) => { 
-                e.stopPropagation(); 
+            root.getElementById('oldSub').addEventListener('focus', (e) => {
+                e.stopPropagation();
                 this.showFieldAutocomplete('oldSub', 'oldSub');
             });
-            root.getElementById('oldSub').addEventListener('blur', (e) => { 
+            root.getElementById('oldSub').addEventListener('blur', (e) => {
                 e.stopPropagation();
                 setTimeout(() => this.hideFieldAutocomplete('oldSub'), 200);
                 this.checkWwwConsistency();
             });
             root.getElementById('oldSub').addEventListener('keydown', (e) => e.stopPropagation());
-            
+
             // v4.3.0: Унифицированные обработчики для newSub
-            root.getElementById('newSub').addEventListener('input', (e) => { 
-                e.stopPropagation(); 
+            root.getElementById('newSub').addEventListener('input', (e) => {
+                e.stopPropagation();
                 this.showFieldAutocomplete('newSub', 'newSub');
-                this.checkWwwConsistency(); 
+                this.checkWwwConsistency();
             });
-            root.getElementById('newSub').addEventListener('focus', (e) => { 
-                e.stopPropagation(); 
+            root.getElementById('newSub').addEventListener('focus', (e) => {
+                e.stopPropagation();
                 this.showFieldAutocomplete('newSub', 'newSub');
             });
-            root.getElementById('newSub').addEventListener('blur', (e) => { 
+            root.getElementById('newSub').addEventListener('blur', (e) => {
                 e.stopPropagation();
                 setTimeout(() => this.hideFieldAutocomplete('newSub'), 200);
                 this.checkWwwConsistency();
@@ -8076,21 +8256,21 @@ ${hreflangCode}
         showFieldAutocomplete(fieldId, type) {
             const input = this.shadowRoot.getElementById(fieldId);
             const autocompleteDiv = this.shadowRoot.getElementById(fieldId + '-autocomplete');
-            
+
             if(DEBUG) console.log('showFieldAutocomplete:', fieldId, type, 'input:', !!input, 'div:', !!autocompleteDiv);
-            
+
             if (!input || !autocompleteDiv) {
                 if(DEBUG) console.log('❌ Элемент не найден:', fieldId);
                 return;
             }
-            
+
             const value = input.value.trim();
             const currentDomain = this.shadowRoot.getElementById('domain').value.trim();
-            
+
             autocompleteDiv.innerHTML = '';
-            
+
             let items = [];
-            
+
             if (type === 'domain') {
                 // v4.3.5: При пустом поле не показываем ничего, только при вводе
                 if (value.length > 0) {
@@ -8171,7 +8351,7 @@ ${hreflangCode}
                 }
                 if(DEBUG) console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
             }
-            
+
             if (items.length > 0) {
                 items.forEach(item => {
                     const itemDiv = document.createElement('div');
@@ -8214,25 +8394,25 @@ ${hreflangCode}
                 this.hideFieldAutocomplete(fieldId);
             }
         }
-        
+
         hideFieldAutocomplete(fieldId) {
             const autocompleteDiv = this.shadowRoot.getElementById(fieldId + '-autocomplete');
             if (autocompleteDiv) {
                 autocompleteDiv.classList.remove('active');
             }
         }
-        
+
         hideAllAutocomplete() {
             ['domain', 'oldSub', 'newSub'].forEach(id => this.hideFieldAutocomplete(id));
         }
-        
+
         selectAutocompleteItem(fieldId, type, item) {
             const input = this.shadowRoot.getElementById(fieldId);
             if (!input) return;
-            
+
             input.value = item.value;
             this.hideFieldAutocomplete(fieldId);
-            
+
             if (type === 'domain' && item.data) {
                 // Автозаполнение отдела и CMS
                 const dept = this.shadowRoot.getElementById('department');
@@ -8240,7 +8420,7 @@ ${hreflangCode}
                 if (dept && item.data.department) dept.value = item.data.department;
                 if (cms && item.data.cms) cms.value = item.data.cms;
             }
-            
+
             // v4.3.7: Установка флагов редиректа при выборе oldSub
             if (type === 'oldSub' && item.data) {
                 const redirectType = item.data.action || '301';
@@ -8249,16 +8429,16 @@ ${hreflangCode}
                 if (redirect301) redirect301.checked = (redirectType === '301');
                 if (redirect404) redirect404.checked = (redirectType === '404');
             }
-            
+
             // Запускаем валидацию
             this.validateInputField(fieldId, type, type === 'domain' ? '' : this.shadowRoot.getElementById('domain').value.trim());
         }
-        
+
         // Обёртки для обратной совместимости
         showAutocomplete() {
             this.showFieldAutocomplete('domain', 'domain');
         }
-        
+
         hideAutocomplete() {
             this.hideFieldAutocomplete('domain');
         }
@@ -8278,10 +8458,10 @@ ${hreflangCode}
         // FIX v4.1.9: Валидация oldSub - делегируем к классу MassTasksInterface
         validateOldSubWithDatabase(domain, oldSub) {
             if (!domain || !oldSub) return { valid: true, inHistory: false };
-            
+
             const db = loadSitesDatabase();
             const normalized = normalizeDomain(domain);
-            
+
             let site = db[domain];
             if (!site) {
                 for (const d in db) {
@@ -8291,18 +8471,18 @@ ${hreflangCode}
                     }
                 }
             }
-            
+
             if (!site || !site.oldSubdomains) {
                 return { valid: true, inHistory: false, message: 'Новый поддомен (не в истории)' };
             }
-            
+
             const normalizedOldSub = normalizeDomain(oldSub);
             const found = site.oldSubdomains.find(s => normalizeDomain(s.url) === normalizedOldSub);
-            
+
             if (found) {
                 const inputHasWww = oldSub.toLowerCase().replace(/^https?:\/\//, '').startsWith('www.');
                 const dbHasWww = found.url.toLowerCase().replace(/^https?:\/\//, '').startsWith('www.');
-                
+
                 if (inputHasWww !== dbHasWww) {
                     return {
                         valid: true,
@@ -8313,7 +8493,7 @@ ${hreflangCode}
                         message: `В базе: ${found.url} (${dbHasWww ? 'с www' : 'без www'})`
                     };
                 }
-                
+
                 return {
                     valid: true,
                     inHistory: true,
@@ -8323,7 +8503,7 @@ ${hreflangCode}
                     message: `Найден в истории (action: ${found.action})`
                 };
             }
-            
+
             return { valid: true, inHistory: false, message: 'Новый поддомен (не в истории)' };
         }
 
@@ -8344,7 +8524,7 @@ ${hreflangCode}
             if (domainData.cms && cmsSelect) {
                 cmsSelect.value = domainData.cms;
             }
-            
+
             // FIX v4.1.9: Обновляем datalist oldSub из базы
             this.updateOldSubDatabaseList(domainData.domain);
 
@@ -8386,28 +8566,28 @@ ${hreflangCode}
                 if(DEBUG) console.log('❌ validateInputField: input не найден', inputId);
                 return;
             }
-            
+
             const value = input.value.trim();
             const parent = input.closest('.input-with-settings') || input.closest('.form-group') || input.parentElement;
-            
+
             if(DEBUG) console.log('🔍 validateInputField START:', inputId, 'value:', value);
-            
+
             // Убираем старые классы и tooltip
             input.classList.remove('input-valid', 'input-error');
             const oldTooltip = parent.querySelector('.input-warning-tooltip');
             if (oldTooltip) oldTooltip.remove();
-            
+
             if (!value) {
                 if(DEBUG) console.log('   → пустое значение, выход');
                 return;
             }
-            
+
             // Для домена relatedDomain пустой, для oldSub/newSub - текущий домен
             const domain = type === 'domain' ? '' : relatedDomain;
             const validation = validateWithDatabase(type, domain, value);
-            
+
             if(DEBUG) console.log('   → validation result:', validation.status, validation.message);
-            
+
             // v4.3.2: Единая логика для всех полей - красная рамка при not-found или www-mismatch
             if (validation.status === 'valid') {
                 input.classList.add('input-valid');
@@ -8429,27 +8609,27 @@ ${hreflangCode}
                 if(DEBUG) console.log('   → другой статус, без класса');
             }
         }
-        
+
         // Обёртки для обратной совместимости
         validateDomainInput(domain) {
             if(DEBUG) console.log('🔄 validateDomainInput вызван');
             this.validateInputField('domain', 'domain');
         }
-        
+
         checkWwwConsistency() {
             const domain = this.shadowRoot.getElementById('domain').value.trim();
-            
+
             // Скрываем старые подсказки (если есть)
             const hintDiv = this.shadowRoot.getElementById('www-hint');
             const comparisonDiv = this.shadowRoot.getElementById('www-comparison');
             if (hintDiv) hintDiv.style.display = 'none';
             if (comparisonDiv) comparisonDiv.style.display = 'none';
-            
+
             // Валидация oldSub и newSub
             this.validateInputField('oldSub', 'oldSub', domain);
             this.validateInputField('newSub', 'newSub', domain);
         }
-        
+
         // Deprecated - оставлено для совместимости
         validateSingleInput(input, type, domain, value, isRequired) {
             this.validateInputField(input.id, type, domain);
@@ -8486,7 +8666,7 @@ ${hreflangCode}
         populateDepartmentSelect() {
             const select = this.shadowRoot.getElementById('department');
             if (!select) return;
-            
+
             const currentVal = select.value;
             select.innerHTML = '<option value="">Выберите отдел</option>';
             const depts = getDepartmentsList();
@@ -8502,7 +8682,7 @@ ${hreflangCode}
         populateCmsSelect() {
             const select = this.shadowRoot.getElementById('cms');
             if (!select) return;
-            
+
             const currentVal = select.value;
             select.innerHTML = '<option value="">— Не указано —</option>';
             const cmsList = getCmsList();
@@ -8519,7 +8699,7 @@ ${hreflangCode}
             const modal = new TemplateModal(this.shadowRoot, () => {
                 // v4.3.7: Обновляем select в одиночном режиме
                 this.populateTemplateSelect();
-                
+
                 // v4.3.7: Если активен массовый режим - перерендериваем таблицу
                 if (this.currentMode === 'mass') {
                     this.renderTasksTable();
@@ -8557,6 +8737,63 @@ ${hreflangCode}
         showStatusLog() {
             this.shadowRoot.getElementById('status-log').style.display = 'block';
             this.shadowRoot.getElementById('log-content').innerHTML = '';
+            
+            // v4.5.5: Кнопка копирования лога
+            const copyBtn = this.shadowRoot.getElementById('copy-log-btn');
+            if (copyBtn && !copyBtn._hasListener) {
+                copyBtn._hasListener = true;
+                copyBtn.addEventListener('click', () => this.copyLog());
+            }
+        }
+
+        // v4.5.5: Копирование лога в буфер обмена
+        copyLog() {
+            const logContent = this.shadowRoot.getElementById('log-content');
+            const lines = Array.from(logContent.querySelectorAll('div')).map(d => d.textContent);
+            const text = lines.join('\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = this.shadowRoot.getElementById('copy-log-btn');
+                btn.textContent = '✓ Скопировано';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 Копировать';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                showToast('Не удалось скопировать: ' + err.message, 'error');
+            });
+        }
+
+        // v4.5.5: Управление глобальным прогресс-баром
+        showProgress(show = true) {
+            const progress = this.shadowRoot.getElementById('global-progress');
+            if (progress) progress.style.display = show ? 'block' : 'none';
+        }
+
+        updateProgress(current, total, text = null) {
+            const bar = this.shadowRoot.getElementById('global-progress-bar');
+            const textEl = this.shadowRoot.getElementById('global-progress-text');
+            if (!bar || !textEl) return;
+            
+            const percent = Math.round((current / total) * 100);
+            bar.style.width = percent + '%';
+            textEl.textContent = text || `${current}/${total} (${percent}%)`;
+        }
+
+        // v4.5.5: Обновление заголовка с индикатором процесса
+        setProcessingState(processing) {
+            this.isProcessing = processing;
+            const title = this.shadowRoot.getElementById('dashboard-title');
+            if (title) {
+                if (processing) {
+                    title.innerHTML = '⏳ <span style="animation: pulse 1s infinite;">Отправка...</span>';
+                    title.style.color = '#ffc107';
+                } else {
+                    title.innerHTML = '🔧 Смена поддоменов v4.0';
+                    title.style.color = '';
+                }
+            }
         }
 
         logMessage(message, type = 'info') {
@@ -8604,7 +8841,7 @@ ${hreflangCode}
                 this.logMessage(`⚡ Приоритет: ${data.priority}`);
 
                 addToHistory(data.domain, data.oldSub);
-                
+
                 // FIX v4.1.8: Автообновление базы сайтов
                 updateSiteAfterTask(data.domain, {
                     department: data.department,
@@ -8715,18 +8952,18 @@ ${hreflangCode}
 
         generateTaskDescription(data) {
             const templates = loadTemplates();
-            
+
             // Функция очистки URL
             const cleanUrl = (url) => {
                 if (!url) return '';
                 return url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
             };
-            
+
             // Очищаем данные
             const domain = cleanUrl(data.domain);
             const oldSub = cleanUrl(data.oldSub);
             const newSub = cleanUrl(data.newSub);
-            
+
             const hreflangTemplate = data.templateIndex !== undefined && data.templateIndex !== '' ? templates[data.templateIndex] : null;
 
             // Генерируем hreflang код
@@ -8751,7 +8988,7 @@ ${hreflangCode}
 
             // Формируем ТЗ согласно шаблону
             let description = '';
-            
+
             // Блок 1: 301 редирект (если выбран)
             if (data.redirect301) {
                 description += `Если есть 301 редирект:
@@ -8760,7 +8997,7 @@ ${hreflangCode}
 
 `;
             }
-            
+
             // Блок 2: 404 для страниц
             description += `2) Отдать 404 для страниц:
 https://${domain}/page/
@@ -8768,7 +9005,7 @@ https://${oldSub}/
 https://${domain}/hreflang/ (может быть несколько) и
 
 `;
-            
+
             // Блок 3: Домен подмены
             description += `Если есть домен-подмена:
 
@@ -8776,27 +9013,27 @@ https://${domain}/hreflang/ (может быть несколько) и
 https://${oldSub}/
 
 `;
-            
+
             // Блок 4: Создать страницу на дропе
             description += `4) Создать страницу на дропе (дубль главной):
 https://${newSub}/
 
 `;
-            
+
             // Блок 5: Канониклы и хрефланги
             description += `5) На главной странице и внутряке (https://${domain}/ и https://${newSub}/) прописать канониклы и хрефланги:
 ${hreflangCode}
 Меняем старые канониклы и хрефланги на новые
 
 `;
-            
+
             // Блок 6: Актуализировать ссылки
             description += `Если надо:
 
 6) Актуализировать ссылки в (выбрать одно или несколько: футере, хедере, боковом меню, sitemap)
 
 `;
-            
+
             // Блок 7: Важная плашка
             description += `Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`;
 
@@ -8816,7 +9053,7 @@ ${hreflangCode}
 
             // v4.5.0: Если assignee выбран вручную - используем его, иначе автоматический выбор
             const assigneeGid = data.assignee || this.selectAssignee(data.cms, data.department);
-            
+
             // Используем перераспределение приоритетов
             const dueDate = await this.calculateDueDateWithPrioritySwap(data.priority, assigneeGid);
 
@@ -8939,7 +9176,7 @@ ${hreflangCode}
         }
 
         // ===== ЛОГИКА ПЕРЕРАСПРЕДЕЛЕНИЯ ПРИОРИТЕТОВ =====
-        
+
         getPriorityWeight(priority) {
             // FIX v4.1.2: null/undefined = low (вес 1), пустое окно = 0
             if (!priority) return 1; // null автоматически = low
@@ -8953,7 +9190,7 @@ ${hreflangCode}
                 // v4.3.7: Используем user_task_list для получения только личных задач
                 // Сначала получаем user_task_list_gid, потом задачи из него
                 const userTaskListUrl = `https://app.asana.com/api/1.0/users/${assigneeGid}/user_task_list?workspace=${CONFIG.asana.workspaceGid}`;
-                
+
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: userTaskListUrl,
@@ -8968,10 +9205,10 @@ ${hreflangCode}
                                 resolve([]);
                                 return;
                             }
-                            
+
                             // Теперь получаем задачи из user_task_list на конкретную дату
                             const tasksUrl = `https://app.asana.com/api/1.0/user_task_lists/${userTaskList.gid}/tasks?opt_fields=gid,name,due_on,assignee.gid,custom_fields,completed&completed_since=now`;
-                            
+
                             GM_xmlhttpRequest({
                                 method: 'GET',
                                 url: tasksUrl,
@@ -9044,12 +9281,12 @@ ${hreflangCode}
         getNextWorkDay(dateStr) {
             const date = new Date(dateStr);
             date.setDate(date.getDate() + 1);
-            
+
             // Пропускаем выходные (0 = воскресенье, 6 = суббота)
             while (date.getDay() === 0 || date.getDay() === 6) {
                 date.setDate(date.getDate() + 1);
             }
-            
+
             return date.toISOString().split('T')[0];
         }
 
@@ -9058,7 +9295,7 @@ ${hreflangCode}
         async relocateTaskRecursively(taskGid, taskPriority, targetDate, assigneeGid, iteration = 0) {
             // v4.3.7: Для low лимит 3 дня, для остальных 10 дней
             const maxIterations = taskPriority === 'low' ? 3 : 10;
-            
+
             if (iteration >= maxIterations) {
                 this.logMessage(`   ⚠️ Лимит переноса (${maxIterations}), ставлю на ${targetDate}`);
                 if (taskGid) {
@@ -9066,15 +9303,15 @@ ${hreflangCode}
                 }
                 return;
             }
-            
+
             const existingTasks = await this.getAssigneeTasksOnDate(assigneeGid, targetDate);
             const taskWeight = this.getPriorityWeight(taskPriority);
-            
+
             // Ищем задачу с меньшим приоритетом на целевую дату
-            const lowerPriorityTask = existingTasks.find(t => 
+            const lowerPriorityTask = existingTasks.find(t =>
                 this.getPriorityWeight(t.priority) < taskWeight && t.gid !== taskGid
             );
-            
+
             if (lowerPriorityTask) {
                 // Рекурсивно переносим найденную задачу
                 const nextDate = this.getNextWorkDay(targetDate);
@@ -9082,7 +9319,7 @@ ${hreflangCode}
                 await this.relocateTaskRecursively(lowerPriorityTask.gid, lowerPriorityTask.priority, nextDate, assigneeGid, iteration + 1);
                 await this.updateTaskDueDate(lowerPriorityTask.gid, nextDate);
             }
-            
+
             // Если переносим существующую задачу (не новую)
             if (taskGid) {
                 await this.updateTaskDueDate(taskGid, targetDate);
@@ -9092,24 +9329,24 @@ ${hreflangCode}
         // Основная функция: определить дату с учётом приоритетов
         async calculateDueDateWithPrioritySwap(priority, assigneeGid) {
             const baseDate = this.calculateDueDate();
-            
+
             if (!assigneeGid) {
                 return baseDate;
             }
-            
+
             this.logMessage(`🔄 Проверяю задачи на ${baseDate}...`);
-            
+
             // v4.3.7: Разная логика для каждого приоритета
             if (priority === 'high') {
                 // HIGH: всегда на сегодня, swap другого high если есть
                 return await this.placeHighPriorityTask(assigneeGid, baseDate);
             }
-            
+
             if (priority === 'medium') {
                 // MEDIUM: ищет свободный слот в 4 днях, может вытеснить low
                 return await this.placeMediumPriorityTask(assigneeGid, baseDate, 4);
             }
-            
+
             // LOW: анализ 4 дней, выбор наименее загруженного
             return await this.findLeastLoadedDay(assigneeGid, baseDate, 4);
         }
@@ -9128,45 +9365,45 @@ ${hreflangCode}
         async findSlotForPriority(priority, assigneeGid, startDate, daysToCheck) {
             const newWeight = this.getPriorityWeight(priority);
             let checkDate = startDate;
-            
+
             this.logMessage(`📊 Ищу слот для ${priority} в ${daysToCheck} днях...`);
-            
+
             for (let i = 0; i < daysToCheck; i++) {
                 const tasks = await this.getAssigneeTasksOnDate(assigneeGid, checkDate);
-                
+
                 // День свободен — отлично
                 if (tasks.length === 0) {
                     this.logMessage(`   ✓ ${checkDate} свободен`);
                     return checkDate;
                 }
-                
+
                 // Проверяем приоритеты существующих задач
                 const maxExistingWeight = Math.max(...tasks.map(t => this.getPriorityWeight(t.priority)));
-                
+
                 // Если новый приоритет ВЫШЕ всех существующих — swap самого низкого
                 if (newWeight > maxExistingWeight) {
                     const lowestTask = tasks.reduce((lowest, t) => {
                         const w = this.getPriorityWeight(t.priority);
                         return (!lowest || w < this.getPriorityWeight(lowest.priority)) ? t : lowest;
                     }, null);
-                    
+
                     if (lowestTask) {
                         const nextDate = this.getNextWorkDay(checkDate);
                         this.logMessage(`   🔀 Вытесняю "${lowestTask.name}" (${lowestTask.priority || 'low'}) → ${nextDate}`);
                         await this.relocateTaskRecursively(lowestTask.gid, lowestTask.priority || 'low', nextDate, assigneeGid, 0);
                         await this.updateTaskDueDate(lowestTask.gid, nextDate);
                     }
-                    
+
                     this.logMessage(`   ✓ ${priority} задача → ${checkDate}`);
                     return checkDate;
                 }
-                
+
                 // Приоритеты равны или ниже — смотрим следующий день
                 const priorities = tasks.map(t => t.priority || 'low').join(', ');
                 this.logMessage(`   ${checkDate}: занят (${priorities}), ищу дальше...`);
                 checkDate = this.getNextWorkDay(checkDate);
             }
-            
+
             // Лимит достигнут — ставим на первый день
             this.logMessage(`   ⚠️ Лимит ${daysToCheck} дней, ставлю на ${startDate}`);
             return startDate;
@@ -9176,40 +9413,40 @@ ${hreflangCode}
         async findLeastLoadedDay(assigneeGid, startDate, daysToCheck) {
             const daysLoad = [];
             let checkDate = startDate;
-            
+
             this.logMessage(`📊 Анализирую загруженность на ${daysToCheck} дня...`);
-            
+
             for (let i = 0; i < daysToCheck; i++) {
                 const tasks = await this.getAssigneeTasksOnDate(assigneeGid, checkDate);
-                
+
                 // Рассчитываем вес загруженности: high=3, medium=2, low=1
                 let loadWeight = 0;
                 tasks.forEach(t => {
                     const w = this.getPriorityWeight(t.priority || 'low');
                     loadWeight += w;
                 });
-                
+
                 daysLoad.push({
                     date: checkDate,
                     tasksCount: tasks.length,
                     loadWeight: loadWeight
                 });
-                
+
                 this.logMessage(`   ${checkDate}: ${tasks.length} задач (вес: ${loadWeight})`);
-                
+
                 // Если день свободен - сразу берём его
                 if (tasks.length === 0) {
                     this.logMessage(`   ✓ Выбран ${checkDate} (свободен)`);
                     return checkDate;
                 }
-                
+
                 checkDate = this.getNextWorkDay(checkDate);
             }
-            
+
             // Выбираем день с минимальным весом загруженности
             daysLoad.sort((a, b) => a.loadWeight - b.loadWeight);
             const bestDay = daysLoad[0];
-            
+
             this.logMessage(`   ✓ Выбран ${bestDay.date} (${bestDay.tasksCount} задач, вес: ${bestDay.loadWeight})`);
             return bestDay.date;
         }
@@ -9218,7 +9455,7 @@ ${hreflangCode}
         async findDateForTask(priority, assigneeGid, checkDate, iteration, baseDate) {
             // Ограничиваем поиск до 10 рабочих дней для вытесненных
             const maxIterations = 10;
-            
+
             // При достижении лимита возвращаем текущую дату
             if (iteration >= maxIterations) {
                 this.logMessage(`   ⚠️ Лимит поиска (${maxIterations} дней), ставлю на ${checkDate}`);
@@ -9227,31 +9464,31 @@ ${hreflangCode}
 
             const newPriorityWeight = this.getPriorityWeight(priority);
             const existingTasks = await this.getAssigneeTasksOnDate(assigneeGid, checkDate);
-            
+
             // Дата свободна — ставим сюда
             if (existingTasks.length === 0) {
                 this.logMessage(`   ✓ Дата ${checkDate} свободна`);
                 return checkDate;
             }
-            
+
             // Для high/medium: ищем задачу с МЕНЬШИМ приоритетом для свапа
-            const lowerPriorityTask = existingTasks.find(t => 
+            const lowerPriorityTask = existingTasks.find(t =>
                 this.getPriorityWeight(t.priority) < newPriorityWeight
             );
-            
+
             if (lowerPriorityTask) {
                 // Нашли задачу ниже уровнем — делаем свап
                 const nextDate = this.getNextWorkDay(checkDate);
                 this.logMessage(`   🔀 Свап: "${lowerPriorityTask.name}" (${lowerPriorityTask.priority || 'low'}) → ${nextDate}`);
-                
+
                 // Рекурсивно переносим вытесняемую задачу
                 await this.relocateTaskRecursively(lowerPriorityTask.gid, lowerPriorityTask.priority || 'low', nextDate, assigneeGid, 0);
                 await this.updateTaskDueDate(lowerPriorityTask.gid, nextDate);
-                
+
                 this.logMessage(`   ✓ Новая ${priority} задача → ${checkDate}`);
                 return checkDate;
             }
-            
+
             // Все задачи >= по приоритету — идём на следующий день
             this.logMessage(`   ℹ️ На ${checkDate} задачи с приоритетом >= ${priority}, ищу дальше...`);
             const nextDate = this.getNextWorkDay(checkDate);
@@ -9407,7 +9644,7 @@ ID: ${taskData.gid}
         updateDepartmentSelects() {
             const depts = getDepartmentsList();
             const options = '<option value="">—</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
-            
+
             // Обновляем селект в одиночном режиме
             const singleSelect = this.shadowRoot.getElementById('department');
             if (singleSelect) {
@@ -9415,7 +9652,7 @@ ID: ${taskData.gid}
                 singleSelect.innerHTML = options;
                 singleSelect.value = currentVal;
             }
-            
+
             // Перерисовываем таблицу в массовом режиме
             if (this.currentMode === 'mass') {
                 this.renderTasksTable();
@@ -9425,7 +9662,7 @@ ID: ${taskData.gid}
         updateCmsSelects() {
             const cmsList = getCmsList();
             const options = '<option value="">—</option>' + cmsList.map(c => `<option value="${c.key}">${c.name}</option>`).join('');
-            
+
             // Обновляем селект в одиночном режиме
             const singleSelect = this.shadowRoot.getElementById('cms');
             if (singleSelect) {
@@ -9433,7 +9670,7 @@ ID: ${taskData.gid}
                 singleSelect.innerHTML = options;
                 singleSelect.value = currentVal;
             }
-            
+
             // Перерисовываем таблицу в массовом режиме
             if (this.currentMode === 'mass') {
                 this.renderTasksTable();
@@ -9441,11 +9678,11 @@ ID: ${taskData.gid}
         }
 
         // v4.5.1: Модальное окно истории с 3 вкладками
-        openAutomationHistoryModal(initialTab = 'automation') {
+        openAutomationHistoryModal(initialTab = 'local') {
             const automationHistory = loadAutomationHistory();
             const localHistory = loadLocalTzHistory();
             const cloudHistory = loadCloudTzHistory();
-            
+
             const modalHtml = `
                 <div class="automation-history-modal">
                     <style>
@@ -9506,7 +9743,7 @@ ID: ${taskData.gid}
                             z-index: 10000013;
                         }
                         .ah-close:hover { background: rgba(255,255,255,0.3); }
-                        
+
                         /* Вкладки */
                         .ah-tabs {
                             display: flex;
@@ -9546,7 +9783,7 @@ ID: ${taskData.gid}
                             background: #e8f5e9;
                             color: #2e7d32;
                         }
-                        
+
                         .ah-tab-panel {
                             display: none;
                             flex-direction: column;
@@ -9556,7 +9793,7 @@ ID: ${taskData.gid}
                         .ah-tab-panel.active {
                             display: flex;
                         }
-                        
+
                         .ah-toolbar {
                             padding: 12px 24px;
                             border-bottom: 1px solid #e0e0e0;
@@ -9580,10 +9817,10 @@ ID: ${taskData.gid}
                             font-size: 14px;
                             color: #333;
                         }
-                        .ah-stats span { 
-                            background: #e8f5e9; 
-                            padding: 4px 10px; 
-                            border-radius: 12px; 
+                        .ah-stats span {
+                            background: #e8f5e9;
+                            padding: 4px 10px;
+                            border-radius: 12px;
                             margin-left: 8px;
                             font-weight: 600;
                             color: #2e7d32;
@@ -9685,12 +9922,8 @@ ID: ${taskData.gid}
                             <h2>📋 История</h2>
                             <button class="ah-close" id="ah-close">×</button>
                         </div>
-                        
+
                         <div class="ah-tabs">
-                            <button class="ah-tab ${initialTab === 'automation' ? 'active' : ''}" data-tab="automation">
-                                🚀 Asana автоматизация
-                                <span class="ah-tab-count">${automationHistory.length}</span>
-                            </button>
                             <button class="ah-tab ${initialTab === 'local' ? 'active' : ''}" data-tab="local">
                                 📄 Локальные ТЗ
                                 <span class="ah-tab-count">${localHistory.length}</span>
@@ -9700,56 +9933,7 @@ ID: ${taskData.gid}
                                 <span class="ah-tab-count">${cloudHistory.length}</span>
                             </button>
                         </div>
-                        
-                        <!-- Вкладка: Asana автоматизация -->
-                        <div class="ah-tab-panel ${initialTab === 'automation' ? 'active' : ''}" data-panel="automation">
-                            <div class="ah-toolbar">
-                                <input type="text" id="ah-search-automation" placeholder="🔍 Поиск...">
-                                <select id="ah-filter-dept-automation">
-                                    <option value="">Все отделы</option>
-                                    ${getDepartmentsList().map(d => '<option value="' + d + '">' + d + '</option>').join('')}
-                                </select>
-                                <select id="ah-filter-mode-automation">
-                                    <option value="">Все режимы</option>
-                                    <option value="single">Одиночный</option>
-                                    <option value="mass">Массовый</option>
-                                </select>
-                                <div class="ah-stats">Записей: <span id="ah-total-automation">${automationHistory.length}</span></div>
-                            </div>
-                            <div class="ah-body">
-                                ${automationHistory.length === 0 ? '<div class="ah-empty"><div class="ah-empty-icon">📭</div><div>История автоматизаций пуста</div></div>' : ''}
-                                <table class="ah-table" id="ah-table-automation" style="${automationHistory.length === 0 ? 'display:none' : ''}">
-                                    <thead>
-                                        <tr>
-                                            <th>Дата</th>
-                                            <th>Задача</th>
-                                            <th>Домен</th>
-                                            <th>Старый</th>
-                                            <th>Новый</th>
-                                            <th>Подмена</th>
-                                            <th>Отдел</th>
-                                            <th>Редирект</th>
-                                            <th>Приоритет</th>
-                                            <th>CMS</th>
-                                            <th>DMCA</th>
-                                            <th>AMP</th>
-                                            <th>Подзад.</th>
-                                            <th>Режим</th>
-                                            <th>Статус</th>
-                                            <th>Asana</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="ah-tbody-automation">
-                                        ${automationHistory.map(h => this.renderHistoryRow(h, 'automation')).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="ah-footer">
-                                <button class="ah-btn ah-btn-danger" id="ah-clear-automation">🗑️ Очистить</button>
-                                <button class="ah-btn ah-btn-secondary" id="ah-export-automation">📥 Экспорт</button>
-                            </div>
-                        </div>
-                        
+
                         <!-- Вкладка: Локальные ТЗ -->
                         <div class="ah-tab-panel ${initialTab === 'local' ? 'active' : ''}" data-panel="local">
                             <div class="ah-toolbar">
@@ -9791,7 +9975,7 @@ ID: ${taskData.gid}
                                 <button class="ah-btn ah-btn-secondary" id="ah-export-local">📥 Экспорт</button>
                             </div>
                         </div>
-                        
+
                         <!-- Вкладка: Облачные ТЗ -->
                         <div class="ah-tab-panel ${initialTab === 'cloud' ? 'active' : ''}" data-panel="cloud">
                             <div class="ah-toolbar">
@@ -9837,20 +10021,20 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             const container = document.createElement('div');
             container.innerHTML = modalHtml;
             const modal = container.firstElementChild;
             document.body.appendChild(modal);
-            
+
             const closeModal = () => modal.remove();
-            
+
             // Закрытие
             modal.querySelector('#ah-close').addEventListener('click', closeModal);
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) closeModal();
             });
-            
+
             // Переключение вкладок
             modal.querySelectorAll('.ah-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
@@ -9860,7 +10044,7 @@ ID: ${taskData.gid}
                     modal.querySelector('[data-panel="' + tab.dataset.tab + '"]').classList.add('active');
                 });
             });
-            
+
             // Фильтрация для каждой вкладки
             const setupFilters = (type, history) => {
                 const searchInput = modal.querySelector('#ah-search-' + type);
@@ -9868,22 +10052,22 @@ ID: ${taskData.gid}
                 const modeFilter = modal.querySelector('#ah-filter-mode-' + type);
                 const tbody = modal.querySelector('#ah-tbody-' + type);
                 const totalSpan = modal.querySelector('#ah-total-' + type);
-                
+
                 const applyFilters = () => {
                     const search = searchInput?.value.toLowerCase() || '';
                     const dept = deptFilter?.value || '';
                     const mode = modeFilter?.value || '';
-                    
+
                     let visible = 0;
                     tbody.querySelectorAll('tr').forEach(row => {
                         const text = row.textContent.toLowerCase();
                         const rowDept = row.dataset.dept || '';
                         const rowMode = row.dataset.mode || '';
-                        
+
                         const matchSearch = !search || text.includes(search);
                         const matchDept = !dept || rowDept === dept;
                         const matchMode = !mode || rowMode === mode;
-                        
+
                         if (matchSearch && matchDept && matchMode) {
                             row.style.display = '';
                             visible++;
@@ -9893,16 +10077,15 @@ ID: ${taskData.gid}
                     });
                     if (totalSpan) totalSpan.textContent = visible;
                 };
-                
+
                 if (searchInput) searchInput.addEventListener('input', applyFilters);
                 if (deptFilter) deptFilter.addEventListener('change', applyFilters);
                 if (modeFilter) modeFilter.addEventListener('change', applyFilters);
             };
-            
-            setupFilters('automation', automationHistory);
+
             setupFilters('local', localHistory);
             setupFilters('cloud', cloudHistory);
-            
+
             // Подзадачи
             modal.querySelectorAll('.ah-subtasks-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -9920,15 +10103,8 @@ ID: ${taskData.gid}
                     }
                 });
             });
-            
+
             // Очистка
-            modal.querySelector('#ah-clear-automation').addEventListener('click', () => {
-                if (confirm('Удалить всю историю автоматизаций?')) {
-                    clearAutomationHistory();
-                    closeModal();
-                    this.openAutomationHistoryModal('automation');
-                }
-            });
             modal.querySelector('#ah-clear-local').addEventListener('click', () => {
                 if (confirm('Удалить всю историю локальных ТЗ?')) {
                     clearLocalTzHistory();
@@ -9943,20 +10119,19 @@ ID: ${taskData.gid}
                     this.openAutomationHistoryModal('cloud');
                 }
             });
-            
+
             // Экспорт
-            modal.querySelector('#ah-export-automation').addEventListener('click', () => this.exportHistoryToXls('automation'));
             modal.querySelector('#ah-export-local').addEventListener('click', () => this.exportHistoryToXls('local'));
             modal.querySelector('#ah-export-cloud').addEventListener('click', () => this.exportHistoryToXls('cloud'));
         }
-        
+
         // Рендер строки истории
         renderHistoryRow(h, type) {
             const date = h.date ? new Date(h.date).toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—';
-            const subtasksBtn = (h.subtasksCount || 0) > 0 
+            const subtasksBtn = (h.subtasksCount || 0) > 0
                 ? '<span class="ah-subtasks-btn" data-subtasks=\'' + JSON.stringify(h.subtasks || []).replace(/'/g, "&#39;") + '\'>' + h.subtasksCount + '</span>'
                 : '0';
-            
+
             let lastCols = '';
             if (type === 'automation') {
                 lastCols = `
@@ -9969,10 +10144,10 @@ ID: ${taskData.gid}
             } else if (type === 'cloud') {
                 lastCols = `
                     <td title="${h.sheetName || ''}">${(h.sheetName || '—').substring(0, 20)}${(h.sheetName || '').length > 20 ? '...' : ''}</td>
-                    <td>${h.sheetUrl ? '<a href="' + h.sheetUrl + '" target="_blank">Открыть</a>' : '—'}</td>
+                    <td>${h.sheetUrl ? '<a href="' + h.sheetUrl + '" target="_blank">🔗</a>' : '—'}</td>
                 `;
             }
-            
+
             return `
                 <tr data-id="${h.id || ''}" data-dept="${h.department || ''}" data-mode="${h.mode || ''}">
                     <td>${date}</td>
@@ -9995,11 +10170,11 @@ ID: ${taskData.gid}
                 </tr>
             `;
         }
-        
+
         // Экспорт истории в XLS
         exportHistoryToXls(type) {
             let history, sheetName, headers, mapRow;
-            
+
             if (type === 'automation') {
                 history = loadAutomationHistory();
                 sheetName = 'Asana автоматизация';
@@ -10035,35 +10210,35 @@ ID: ${taskData.gid}
                     h.subtasksCount || 0, h.sheetName || '', h.sheetUrl || ''
                 ];
             }
-            
+
             if (!history || history.length === 0) {
                 showToast('История пуста');
                 return;
             }
-            
+
             const rows = history.map(mapRow);
             const data = [headers, ...rows];
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, sheetName);
-            
+
             XLSX.writeFile(wb, type + '-history-' + new Date().toISOString().split('T')[0] + '.xlsx');
         }
 
         // v4.3.3: Модальное окно управления поддоменами домена
         openSubdomainManagerModal(mode = 'oldSub', massTaskId = null) {
             const currentDomain = this.shadowRoot.getElementById('domain').value.trim();
-            
+
             if (!currentDomain) {
                 showToast('Сначала выберите основной домен');
                 return;
             }
-            
+
             const db = loadSitesDatabase();
             const normalized = normalizeDomain(currentDomain);
             let siteKey = null;
             let site = null;
-            
+
             for (const d in db) {
                 if (db[d].status === 'active' && normalizeDomain(d) === normalized) {
                     siteKey = d;
@@ -10071,19 +10246,19 @@ ID: ${taskData.gid}
                     break;
                 }
             }
-            
+
             if (!site) {
                 showToast(`Домен "${currentDomain}" не найден в базе. Сначала добавьте его через "Управление доменами".`);
                 return;
             }
-            
+
             const oldSubs = site.oldSubdomains || [];
             const currentSub = site.currentSubdomain || '';
-            
+
             // v4.3.7: Сохраняем taskId для использования при выборе
             const that = this;
             const targetTaskId = massTaskId;
-            
+
             const modalHtml = `
                 <div class="subdomain-manager-modal">
                     <style>
@@ -10196,8 +10371,8 @@ ID: ${taskData.gid}
                         .sm-list-item:last-child { border-bottom: none; }
                         .sm-list-item:hover { background: #f9f9f9; }
                         .sm-list-url { flex: 1; font-size: 14px; color: #333; }
-                        .sm-list-meta { 
-                            font-size: 12px; 
+                        .sm-list-meta {
+                            font-size: 12px;
                             color: #666;
                             display: flex;
                             gap: 8px;
@@ -10274,7 +10449,7 @@ ID: ${taskData.gid}
                                     Этот поддомен будет предлагаться в поле "Новый поддомен"
                                 </div>
                             </div>
-                            
+
                             <!-- История старых поддоменов -->
                             <div class="sm-section">
                                 <div class="sm-section-title"><span>📜</span> История старых поддоменов (oldSub)</div>
@@ -10287,7 +10462,7 @@ ID: ${taskData.gid}
                                     <button class="sm-btn sm-btn-add" id="sm-add-old">➕ Добавить</button>
                                 </div>
                                 <div class="sm-list" id="sm-old-list">
-                                    ${oldSubs.length === 0 ? 
+                                    ${oldSubs.length === 0 ?
                                         '<div class="sm-list-empty">История пуста</div>' :
                                         oldSubs.map((s, i) => `
                                             <div class="sm-list-item" data-index="${i}">
@@ -10310,19 +10485,19 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             const container = document.createElement('div');
             container.innerHTML = modalHtml;
             this.shadowRoot.appendChild(container.firstElementChild);
-            
+
             const modal = this.shadowRoot.querySelector('.subdomain-manager-modal');
-            
+
             // Закрытие
             const closeModal = () => modal.remove();
             modal.querySelector('#sm-close').addEventListener('click', closeModal);
             modal.querySelector('#sm-close-btn').addEventListener('click', closeModal);
             modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-            
+
             // v4.3.7: Предотвращаем перехват событий Asana
             modal.querySelectorAll('input, select').forEach(el => {
                 el.addEventListener('keydown', e => e.stopPropagation());
@@ -10330,13 +10505,13 @@ ID: ${taskData.gid}
                 el.addEventListener('keypress', e => e.stopPropagation());
                 el.addEventListener('input', e => e.stopPropagation());
             });
-            
+
             // v4.3.7: Блокируем всплытие для кнопок
             modal.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('mousedown', e => e.stopPropagation());
                 btn.addEventListener('mouseup', e => e.stopPropagation());
             });
-            
+
             // Сохранить текущий поддомен
             modal.querySelector('#sm-save-current').addEventListener('click', () => {
                 const newCurrent = modal.querySelector('#sm-current-input').value.trim();
@@ -10345,7 +10520,7 @@ ID: ${taskData.gid}
                     db[siteKey].currentSubdomain = newCurrent;
                     saveSitesDatabase(db);
                     showToast('Текущий поддомен сохранён!');
-                    
+
                     // v4.3.7: Обновляем поле newSub в зависимости от режима
                     if (targetTaskId) {
                         const task = that.tasks.find(t => t.id === targetTaskId);
@@ -10358,41 +10533,41 @@ ID: ${taskData.gid}
                     }
                 }
             });
-            
+
             // Добавить старый поддомен
             modal.querySelector('#sm-add-old').addEventListener('click', () => {
                 const url = modal.querySelector('#sm-old-input').value.trim();
                 const action = modal.querySelector('#sm-old-action').value;
-                
+
                 if (!url) {
                     showToast('Введите URL поддомена');
                     return;
                 }
-                
+
                 const db = loadSitesDatabase();
                 if (db[siteKey]) {
                     if (!db[siteKey].oldSubdomains) db[siteKey].oldSubdomains = [];
-                    
+
                     // Проверяем дубликат
                     const exists = db[siteKey].oldSubdomains.find(s => normalizeDomain(s.url) === normalizeDomain(url));
                     if (exists) {
                         showToast('Такой поддомен уже есть в истории');
                         return;
                     }
-                    
+
                     db[siteKey].oldSubdomains.push({
                         url: url,
                         action: action,
                         usedDate: new Date().toISOString().split('T')[0]
                     });
                     saveSitesDatabase(db);
-                    
+
                     // Перезагружаем модалку
                     closeModal();
                     that.openSubdomainManagerModal(mode);
                 }
             });
-            
+
             // Удаление из списка
             modal.querySelectorAll('.sm-list-delete').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -10408,13 +10583,13 @@ ID: ${taskData.gid}
                     }
                 });
             });
-            
+
             // Выбрать из списка
             modal.querySelectorAll('.sm-list-use').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const url = btn.dataset.url;
                     const redirectType = btn.dataset.redirect || '301';
-                    
+
                     // v4.3.7: Если это массовый режим - обновляем задачу в массиве
                     if (targetTaskId) {
                         const task = that.tasks.find(t => t.id === targetTaskId);
@@ -10619,7 +10794,7 @@ ID: ${taskData.gid}
                     await this.validateAsanaConnection();
 
                     addToHistory(data.domain, data.oldSub);
-                    
+
                     // FIX v4.1.8: Автообновление базы сайтов
                     updateSiteAfterTask(data.domain, {
                         department: data.department,
@@ -10728,7 +10903,7 @@ ID: ${taskData.gid}
             if (cache.data && cache.data.length > 0) {
                 this.teamMembers = cache.data;
                 if(DEBUG) console.log('📦 Team members загружены из кеша:', cache.data.length);
-                
+
                 // Если кеш устарел - обновляем в фоне
                 if (isTeamMembersCacheExpired()) {
                     if(DEBUG) console.log('⏰ Кеш устарел, запускаем фоновое обновление...');
@@ -10736,7 +10911,7 @@ ID: ${taskData.gid}
                         this.teamMembers = members;
                     }).catch(err => console.warn('Фоновое обновление не удалось:', err));
                 }
-                
+
                 return this.teamMembers;
             }
 
@@ -10869,7 +11044,7 @@ ID: ${taskData.gid}
                     field.addEventListener('keypress', (e) => e.stopPropagation());
                     field.addEventListener('input', (e) => e.stopPropagation());
                     field.addEventListener('focus', (e) => e.stopPropagation());
-                    
+
                     field.addEventListener('change', (e) => {
                         e.stopPropagation();
                         let value = e.target.value;
@@ -11008,7 +11183,7 @@ ID: ${taskData.gid}
         attachEventListeners() {
             this.shadowRoot.getElementById('close-modal').addEventListener('click', () => this.close());
             this.shadowRoot.getElementById('save-template').addEventListener('click', () => this.saveTemplate());
-            
+
             // ===== FIX: stopPropagation для полей ввода шаблона =====
             ['template-name', 'template-code'].forEach(id => {
                 const el = this.shadowRoot.getElementById(id);
@@ -11222,13 +11397,13 @@ ID: ${taskData.gid}
                         <h3 class="sites-modal-title">🌐 База сайтов</h3>
                         <button class="sites-modal-close" id="close-sites-modal">×</button>
                     </div>
-                    
+
                     <div class="sites-tabs">
                         <button class="sites-tab active" data-tab="main">📋 Основной домен</button>
                         <button class="sites-tab" data-tab="old">📜 Старый поддомен</button>
                         <button class="sites-tab" data-tab="new">🆕 Новый поддомен</button>
                     </div>
-                    
+
                     <div class="sites-body">
                         <div class="sites-stats">
                             <div class="sites-stat-item"><div class="sites-stat-value" id="stat-total">${stats.totalSites}</div><div class="sites-stat-label">Всего сайтов</div></div>
@@ -11290,7 +11465,7 @@ ID: ${taskData.gid}
                             <div id="table-new"></div>
                         </div>
                     </div>
-                    
+
                     <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display: none;" />
                 </div>
             `;
@@ -11319,7 +11494,7 @@ ID: ${taskData.gid}
             this.shadowRoot.getElementById('export-btn').addEventListener('click', () => this.exportXLSX());
             this.shadowRoot.getElementById('form-save').addEventListener('click', () => this.saveSite());
             this.shadowRoot.getElementById('form-cancel').addEventListener('click', () => this.hideForm());
-            
+
             // Поиск и фильтры - добавляем stopPropagation
             const searchMain = this.shadowRoot.getElementById('search-main');
             searchMain.addEventListener('keydown', (e) => e.stopPropagation());
@@ -11346,7 +11521,7 @@ ID: ${taskData.gid}
             const importBtn = this.shadowRoot.getElementById('import-btn');
             const importMenu = this.shadowRoot.getElementById('import-menu');
             importBtn.addEventListener('click', (e) => { e.stopPropagation(); importMenu.classList.toggle('active'); });
-            
+
             this.shadowRoot.querySelectorAll('.sites-import-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     this.importMode = e.target.closest('.sites-import-item').dataset.mode;
@@ -11354,7 +11529,7 @@ ID: ${taskData.gid}
                     this.shadowRoot.getElementById('import-file-input').click();
                 });
             });
-            
+
             this.shadowRoot.addEventListener('click', () => importMenu.classList.remove('active'));
             this.shadowRoot.getElementById('import-file-input').addEventListener('change', (e) => {
                 if (e.target.files[0]) this.importFile(e.target.files[0]);
@@ -11366,10 +11541,10 @@ ID: ${taskData.gid}
             this.currentTab = tabName;
             this.searchQuery = '';
             this.filterDepartment = '';
-            
+
             this.shadowRoot.querySelectorAll('.sites-tab').forEach(t => t.classList.remove('active'));
             this.shadowRoot.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-            
+
             this.shadowRoot.querySelectorAll('.sites-tab-content').forEach(c => c.classList.remove('active'));
             this.shadowRoot.getElementById(`content-${tabName}`).classList.add('active');
 
@@ -11392,7 +11567,7 @@ ID: ${taskData.gid}
         renderMainTable() {
             const container = this.shadowRoot.getElementById('table-main');
             const sites = searchSites(this.searchQuery, this.filterDepartment);
-            
+
             if (sites.length === 0) {
                 container.innerHTML = '<div class="sites-empty">Сайты не найдены. Добавьте или импортируйте.</div>';
                 return;
@@ -11484,7 +11659,7 @@ ID: ${taskData.gid}
                     }
                 });
             });
-            
+
             // v4.3.5: Обработчик редактирования старого поддомена
             container.querySelectorAll('[data-action="edit-sub"]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -11508,7 +11683,7 @@ ID: ${taskData.gid}
                 const site = db[domain];
                 if (this.filterDepartment && site.department !== this.filterDepartment) continue;
                 if (query && !domain.toLowerCase().includes(query) && !(site.currentSubdomain || '').toLowerCase().includes(query)) continue;
-                
+
                 rows.push({
                     domain,
                     department: site.department,
@@ -11538,7 +11713,7 @@ ID: ${taskData.gid}
             });
             html += '</tbody></table>';
             container.innerHTML = html;
-            
+
             // v4.3.5: Обработчик редактирования текущего поддомена
             container.querySelectorAll('[data-action="edit-current"]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -11588,7 +11763,7 @@ ID: ${taskData.gid}
         saveSite() {
             const domain = this.shadowRoot.getElementById('form-domain').value.trim();
             if (!domain) { showToast('Введите домен'); return; }
-            
+
             const data = {
                 department: this.shadowRoot.getElementById('form-department').value,
                 cms: this.shadowRoot.getElementById('form-cms').value,
@@ -11598,10 +11773,10 @@ ID: ${taskData.gid}
                 status: this.shadowRoot.getElementById('form-status').value,
                 notes: this.shadowRoot.getElementById('form-notes').value
             };
-            
+
             if (this.editingDomain) updateSite(domain, data);
             else addSite(domain, data);
-            
+
             this.hideForm();
             this.renderMainTable();
             this.updateStats();
@@ -11650,41 +11825,41 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             // Удаляем существующую форму если есть
             const existingForm = this.shadowRoot.getElementById('old-sub-form');
             if (existingForm) existingForm.remove();
-            
+
             // Вставляем форму в начало body
             const body = this.shadowRoot.querySelector('.sites-body');
             body.insertAdjacentHTML('afterbegin', formHtml);
-            
+
             // Обработчики
             this.shadowRoot.getElementById('old-sub-save').addEventListener('click', () => {
                 const domainVal = this.shadowRoot.getElementById('old-sub-domain').value.trim();
                 const urlVal = this.shadowRoot.getElementById('old-sub-url').value.trim();
                 const actionVal = this.shadowRoot.getElementById('old-sub-action').value;
                 const dateVal = this.shadowRoot.getElementById('old-sub-date').value;
-                
+
                 if (!domainVal || !urlVal) {
                     showToast('Заполните домен и поддомен');
                     return;
                 }
-                
+
                 // Если редактируем - сначала удаляем старую запись
                 if (isEdit && url) {
                     removeSubdomainFromSite(domain, url);
                 }
-                
+
                 // Добавляем/обновляем запись
                 addOldSubdomainToSite(domainVal, urlVal, actionVal, dateVal);
-                
+
                 this.shadowRoot.getElementById('old-sub-form').remove();
                 this.renderOldTable();
                 this.updateStats();
                 if (this.onUpdate) this.onUpdate();
             });
-            
+
             this.shadowRoot.getElementById('old-sub-cancel').addEventListener('click', () => {
                 this.shadowRoot.getElementById('old-sub-form').remove();
             });
@@ -11711,34 +11886,34 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             // Удаляем существующую форму если есть
             const existingForm = this.shadowRoot.getElementById('current-sub-form');
             if (existingForm) existingForm.remove();
-            
+
             // Вставляем форму в начало body
             const body = this.shadowRoot.querySelector('.sites-body');
             body.insertAdjacentHTML('afterbegin', formHtml);
-            
+
             // Обработчики
             this.shadowRoot.getElementById('current-sub-save').addEventListener('click', () => {
                 const domainVal = this.shadowRoot.getElementById('current-sub-domain').value.trim();
                 const urlVal = this.shadowRoot.getElementById('current-sub-url').value.trim();
-                
+
                 if (!domainVal) {
                     showToast('Домен не указан');
                     return;
                 }
-                
+
                 // Обновляем текущий поддомен
                 updateSite(domainVal, { currentSubdomain: urlVal });
-                
+
                 this.shadowRoot.getElementById('current-sub-form').remove();
                 this.renderNewTable();
                 this.updateStats();
                 if (this.onUpdate) this.onUpdate();
             });
-            
+
             this.shadowRoot.getElementById('current-sub-cancel').addEventListener('click', () => {
                 this.shadowRoot.getElementById('current-sub-form').remove();
             });
@@ -11749,23 +11924,23 @@ ID: ${taskData.gid}
             try {
                 const db = loadSitesDatabase();
                 const dbKeys = Object.keys(db);
-                
+
                 if (dbKeys.length === 0) {
                     showToast('База сайтов пуста! Сначала добавьте сайты или импортируйте.');
                     return;
                 }
-                
+
                 if(DEBUG) console.log('📤 Экспорт XLSX: ' + dbKeys.length + ' сайтов');
-                
+
                 const wb = XLSX.utils.book_new();
-            
+
             const sheet1Data = [['domain', 'department', 'cms', 'status', 'hasAMP', 'dmcaDefault', 'hreflangTemplate', 'notes']];
             for (const domain in db) {
                 const s = db[domain];
                 sheet1Data.push([domain, s.department, s.cms, s.status, s.hasAMP ? 'true' : 'false', s.dmcaDefault ? 'true' : 'false', s.hreflangTemplate, s.notes]);
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1Data), 'Основной домен');
-            
+
             const sheet2Data = [['domain', 'subdomain', 'action', 'usedDate']];
             for (const domain in db) {
                 (db[domain].oldSubdomains || []).forEach(s => {
@@ -11773,7 +11948,7 @@ ID: ${taskData.gid}
                 });
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet2Data), 'Старый поддомен');
-            
+
             const sheet3Data = [['domain', 'newSubdomain', 'priority', 'assigneeGid', 'projectGid']];
             for (const domain in db) {
                 if (db[domain].currentSubdomain) {
@@ -11781,10 +11956,10 @@ ID: ${taskData.gid}
                 }
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet3Data), 'Новый поддомен');
-            
+
             const filename = `sites_export_${new Date().toISOString().split('T')[0]}.xlsx`;
                 XLSX.writeFile(wb, filename);
-                
+
                 // FIX: Показываем сообщение об успешном экспорте
                 showToast('Экспорт завершён! Файл: ' + filename + '\nСайтов: ' + dbKeys.length);
             } catch (err) {
@@ -12000,8 +12175,8 @@ ID: ${taskData.gid}
                     });
                 }
             });
-            
-            const pinnedHTML = pinnedSubtasks.length === 0 
+
+            const pinnedHTML = pinnedSubtasks.length === 0
                 ? '<div class="pinned-info-empty">Нет закреплённых</div>'
                 : pinnedSubtasks.map(s => {
                     const meta = [];
@@ -12009,7 +12184,7 @@ ID: ${taskData.gid}
                     if (s.allocation) meta.push(s.allocation + '%');
                     return `<span class="pinned-info-item" title="${s.department}">${s.name}${meta.length ? ' (' + meta.join(', ') + ')' : ''}</span>`;
                 }).join('');
-            
+
             return `
                 <div class="modal-overlay">
                     <div class="modal-content" style="max-width: 700px;">
@@ -12017,13 +12192,13 @@ ID: ${taskData.gid}
                             <h3 class="modal-title">📋 Подзадачи: ${this.task.taskName}</h3>
                             <button class="modal-close-btn" id="close-modal">&times;</button>
                         </div>
-                        
+
                         <!-- v4.5.2: Инфо о закреплённых -->
                         <div class="pinned-info-section">
                             <span class="pinned-info-label">📌 Закреплённые:</span>
                             ${pinnedHTML}
                         </div>
-                        
+
                         <div class="subtask-editor-actions">
                             <button class="btn-add-subtask-editor" id="add-subtask-btn">
                                 ➕ Добавить подзадачу
@@ -12100,7 +12275,7 @@ ID: ${taskData.gid}
                 el.addEventListener('keypress', (e) => e.stopPropagation());
                 el.addEventListener('input', (e) => e.stopPropagation());
                 el.addEventListener('focus', (e) => e.stopPropagation());
-                
+
                 el.addEventListener('change', (e) => {
                     e.stopPropagation();
                     const item = e.target.closest('.subtask-editor-item');
@@ -12131,7 +12306,7 @@ ID: ${taskData.gid}
         attachEventListeners() {
             this.shadowRoot.getElementById('close-modal').addEventListener('click', () => this.close());
             this.shadowRoot.getElementById('cancel-modal').addEventListener('click', () => this.close());
-            
+
             this.shadowRoot.getElementById('add-subtask-btn').addEventListener('click', () => {
                 this.subtasks.push({
                     id: this.subtaskIdCounter++,
@@ -12202,7 +12377,7 @@ ID: ${taskData.gid}
             // Загружаем team members из кеша
             const cache = loadTeamMembersFromCache();
             this.teamMembers = cache.data || [];
-            
+
             if (this.teamMembers.length === 0) {
                 try {
                     this.teamMembers = await fetchTeamMembersFromAPI();
@@ -12566,7 +12741,7 @@ ID: ${taskData.gid}
         renderDepartments() {
             const depts = Object.entries(this.departmentsConfig);
             const hasTeams = this.teams && this.teams.length > 0;
-            
+
             return `
                 <div class="settings-header-row" style="${hasTeams ? 'grid-template-columns: 100px 1fr 1fr 1fr auto;' : ''}">
                     <span>Название</span>
@@ -12642,7 +12817,7 @@ ID: ${taskData.gid}
         renderMapping() {
             const availableCount = this.rocketUsers.length;
             const mappedCount = Object.keys(this.rocketMapping).filter(k => this.rocketMapping[k]).length;
-            
+
             return `
                 <div style="padding: 8px 12px; font-size: 12px; color: #666; margin-bottom: 8px;">
                     Укажите @username в Rocket.Chat для каждого пользователя Asana
@@ -12651,7 +12826,7 @@ ID: ${taskData.gid}
                     </div>
                 </div>
                 <div style="padding: 0 12px 8px;">
-                    <input type="text" id="mapping-search" class="mapping-search-input" 
+                    <input type="text" id="mapping-search" class="mapping-search-input"
                            placeholder="🔍 Поиск по имени или username..." autocomplete="off" />
                 </div>
                 <div class="mapping-header-row">
@@ -12667,7 +12842,7 @@ ID: ${taskData.gid}
                             <div class="mapping-item" data-gid="${member.gid}">
                                 <div class="settings-item-name">👤 ${member.name}</div>
                                 <div class="mapping-arrow">→</div>
-                                <input type="text" class="mapping-input" placeholder="Нажмите для выбора" 
+                                <input type="text" class="mapping-input" placeholder="Нажмите для выбора"
                                        value="${currentMapping}" data-gid="${member.gid}" autocomplete="off" readonly />
                                 ${currentMapping ? `<button class="mapping-clear" data-gid="${member.gid}">✖</button>` : '<span></span>'}
                             </div>
@@ -12685,46 +12860,46 @@ ID: ${taskData.gid}
             const googleScriptUrl = GM_getValue('googleAppsScriptUrl', CONFIG.cloud.defaultGoogleScriptUrl);
             const powerAutomateUrl = GM_getValue('powerAutomateUrl', '');
             const rocketWebhook = CONFIG.rocketChat?.webhookUrl || GM_getValue('rocketWebhookUrl', '');
-            
+
             // v4.5.3: Получаем текущие credentials (может быть null)
             const auth = getCloudAuth() || { username: '', password: '' };
-            
+
             return `
                 <div class="cloud-settings">
                     <!-- v4.5.3: Секция авторизации -->
                     <div class="cloud-section" id="auth-section">
                         <h4>🔐 Авторизация</h4>
                         <p class="cloud-hint">Учётные данные для доступа к облачным сервисам</p>
-                        
+
                         <div class="cloud-field">
                             <label>Логин:</label>
-                            <input type="text" id="cloud-username" class="cloud-input" 
-                                   value="${auth.username}" 
+                            <input type="text" id="cloud-username" class="cloud-input"
+                                   value="${auth.username}"
                                    placeholder="admin" autocomplete="off" />
                         </div>
-                        
+
                         <div class="cloud-field">
                             <label>Пароль:</label>
                             <div style="display: flex; gap: 8px;">
-                                <input type="password" id="cloud-password" class="cloud-input" 
-                                       value="${auth.password}" 
+                                <input type="password" id="cloud-password" class="cloud-input"
+                                       value="${auth.password}"
                                        placeholder="••••••••" autocomplete="off" style="flex: 1;" />
                                 <button type="button" id="toggle-password" class="btn-toggle-pass" title="Показать/скрыть">👁️</button>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="cloud-section" id="google-section">
                         <h4>📊 Google Sheets</h4>
                         <p class="cloud-hint">Настройте Google Apps Script для сохранения ТЗ</p>
-                        
+
                         <div class="cloud-field">
                             <label>Google Apps Script URL:</label>
-                            <input type="text" id="google-script-url" class="cloud-input" 
-                                   value="${googleScriptUrl}" 
+                            <input type="text" id="google-script-url" class="cloud-input"
+                                   value="${googleScriptUrl}"
                                    placeholder="https://script.google.com/macros/s/.../exec" />
                         </div>
-                        
+
                         <div class="cloud-instructions">
                             <b>📖 Инструкция:</b>
                             <ol>
@@ -12738,31 +12913,31 @@ ID: ${taskData.gid}
                             <p style="margin-top:8px;color:#666;">💡 Каждая генерация создаёт новую таблицу в Google Drive</p>
                         </div>
                     </div>
-                    
+
                     <div class="cloud-section">
                         <h4>🚀 Rocket.Chat Webhook</h4>
                         <p class="cloud-hint">URL для отправки уведомлений ответственным</p>
-                        
+
                         <div class="cloud-field">
                             <label>Webhook URL:</label>
-                            <input type="text" id="rocket-webhook-url" class="cloud-input" 
-                                   value="${rocketWebhook}" 
+                            <input type="text" id="rocket-webhook-url" class="cloud-input"
+                                   value="${rocketWebhook}"
                                    placeholder="https://rocket.chat/hooks/..." />
                         </div>
                     </div>
-                    
+
                     <div class="cloud-test">
                         <button id="test-cloud-connection" class="btn-test">🔗 Проверить подключение</button>
                         <span id="cloud-test-result"></span>
                     </div>
                 </div>
-                
+
                 <style>
                     .cloud-settings { padding: 16px; }
-                    .cloud-section { 
-                        background: #f9f9f9; 
-                        border-radius: 8px; 
-                        padding: 16px; 
+                    .cloud-section {
+                        background: #f9f9f9;
+                        border-radius: 8px;
+                        padding: 16px;
                         margin-bottom: 16px;
                     }
                     .cloud-section h4 { margin: 0 0 8px 0; color: #333; }
@@ -12778,20 +12953,20 @@ ID: ${taskData.gid}
                     .cloud-hint { font-size: 12px; color: #666; margin: 0 0 12px 0; }
                     .cloud-field { margin-bottom: 12px; }
                     .cloud-field label { display: block; font-size: 13px; margin-bottom: 4px; color: #555; }
-                    .cloud-input { 
-                        width: 100%; 
-                        padding: 10px 12px; 
-                        border: 1px solid #ddd; 
-                        border-radius: 6px; 
+                    .cloud-input {
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 6px;
                         font-size: 13px;
                         box-sizing: border-box;
                         background: #3a3a3a;
                         color: #fff;
                     }
                     .cloud-input:focus { outline: none; border-color: #4CAF50; }
-                    .cloud-instructions { 
-                        border-radius: 6px; 
-                        padding: 12px; 
+                    .cloud-instructions {
+                        border-radius: 6px;
+                        padding: 12px;
                         font-size: 12px;
                         background: #fff;
                         color: #333;
@@ -12801,10 +12976,10 @@ ID: ${taskData.gid}
                     .cloud-instructions ol { margin: 8px 0 0 0; padding-left: 20px; color: #555; }
                     .cloud-instructions li { margin: 4px 0; }
                     .cloud-instructions a { color: #1976D2; }
-                    .cloud-test { 
-                        display: flex; 
-                        align-items: center; 
-                        gap: 12px; 
+                    .cloud-test {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
                         margin-top: 16px;
                     }
                     .btn-test {
@@ -12819,7 +12994,7 @@ ID: ${taskData.gid}
                     }
                     .btn-test:hover { background: #45a049; }
                     #cloud-test-result { font-size: 13px; }
-                    
+
                     .cloud-provider-toggle {
                         display: flex;
                         gap: 12px;
@@ -12862,8 +13037,8 @@ ID: ${taskData.gid}
                     .filter(([gid, username]) => gid !== currentGid && username)
                     .map(([gid, username]) => username.toLowerCase())
             );
-            
-            return this.rocketUsers.filter(u => 
+
+            return this.rocketUsers.filter(u =>
                 u.username && !usedUsernames.has('@' + u.username.toLowerCase())
             );
         }
@@ -12874,7 +13049,7 @@ ID: ${taskData.gid}
                 const datalist = this.shadowRoot.getElementById(`rocket-users-${member.gid}`);
                 if (datalist) {
                     const availableUsers = this.getAvailableRocketUsers(member.gid);
-                    datalist.innerHTML = availableUsers.map(u => 
+                    datalist.innerHTML = availableUsers.map(u =>
                         `<option value="@${u.username}">${u.name || u.username}</option>`
                     ).join('');
                 }
@@ -12885,14 +13060,14 @@ ID: ${taskData.gid}
         showRocketDropdown(gid, btn) {
             const dropdown = this.shadowRoot.getElementById('rocket-dropdown');
             if (!dropdown) return;
-            
+
             const availableUsers = this.getAvailableRocketUsers(gid);
             const usedUsernames = new Set(
                 Object.entries(this.rocketMapping)
                     .filter(([g, u]) => g !== gid && u)
                     .map(([g, u]) => u.toLowerCase())
             );
-            
+
             // Все пользователи: доступные + использованные (помечены)
             const allUsers = this.rocketUsers.map(u => ({
                 ...u,
@@ -12902,7 +13077,7 @@ ID: ${taskData.gid}
                 if (a.isUsed !== b.isUsed) return a.isUsed ? 1 : -1;
                 return (a.name || a.username).localeCompare(b.name || b.username);
             });
-            
+
             if (allUsers.length === 0) {
                 dropdown.innerHTML = `<div class="rocket-dropdown-empty">Нет пользователей Rocket.Chat в кеше.<br>Проверьте настройки API.</div>`;
             } else {
@@ -12920,7 +13095,7 @@ ID: ${taskData.gid}
                         `).join('')}
                     </div>
                 `;
-                
+
                 // Обработчик поиска
                 const searchInput = dropdown.querySelector('#rocket-dropdown-search');
                 searchInput.addEventListener('input', (e) => {
@@ -12932,7 +13107,7 @@ ID: ${taskData.gid}
                 });
                 searchInput.addEventListener('keydown', (e) => e.stopPropagation());
                 searchInput.addEventListener('keyup', (e) => e.stopPropagation());
-                
+
                 // Обработчик выбора
                 dropdown.querySelectorAll('.rocket-dropdown-item').forEach(item => {
                     item.addEventListener('click', () => {
@@ -12942,24 +13117,24 @@ ID: ${taskData.gid}
                         const username = item.dataset.username;
                         const targetGid = item.dataset.gid;
                         this.rocketMapping[targetGid] = username;
-                        
+
                         // Обновляем input
                         const input = this.shadowRoot.querySelector(`.mapping-input[data-gid="${targetGid}"]`);
                         if (input) input.value = username;
-                        
+
                         this.hideRocketDropdown();
                         this.renderContent();
                     });
                 });
             }
-            
+
             // Позиционирование dropdown (fixed относительно viewport)
             const rect = btn.getBoundingClientRect();
             dropdown.style.top = (rect.bottom + 5) + 'px';
             dropdown.style.left = Math.max(10, rect.left - 150) + 'px';
 
             dropdown.classList.remove('hidden');
-            
+
             // Фокус на поиск
             setTimeout(() => {
                 const searchInput = dropdown.querySelector('#rocket-dropdown-search');
@@ -12976,7 +13151,7 @@ ID: ${taskData.gid}
         attachEventListeners() {
             this.shadowRoot.getElementById('close-modal').addEventListener('click', () => this.close());
             this.shadowRoot.getElementById('cancel-modal').addEventListener('click', () => this.close());
-            
+
             this.shadowRoot.querySelectorAll('.settings-tab').forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     this.activeTab = e.target.dataset.tab;
@@ -12990,7 +13165,7 @@ ID: ${taskData.gid}
                 saveDepartmentsConfig(this.departmentsConfig);
                 saveCmsConfig(this.cmsConfig);
                 saveRocketChatMapping(this.rocketMapping);
-                
+
                 // v4.5.3: Сохраняем credentials
                 const usernameInput = this.shadowRoot.getElementById('cloud-username');
                 const passwordInput = this.shadowRoot.getElementById('cloud-password');
@@ -13001,13 +13176,13 @@ ID: ${taskData.gid}
                         saveCloudAuth(username, password);
                     }
                 }
-                
+
                 // v4.5.0: Сохраняем облачные настройки
                 const cloudProvider = this.shadowRoot.querySelector('input[name="cloud-provider"]:checked')?.value;
                 const googleUrlInput = this.shadowRoot.getElementById('google-script-url');
                 const powerAutomateInput = this.shadowRoot.getElementById('power-automate-url');
                 const rocketWebhookInput = this.shadowRoot.getElementById('rocket-webhook-url');
-                
+
                 if (cloudProvider) {
                     GM_setValue('cloudProvider', cloudProvider);
                 }
@@ -13020,7 +13195,7 @@ ID: ${taskData.gid}
                 if (rocketWebhookInput) {
                     GM_setValue('rocketWebhookUrl', rocketWebhookInput.value.trim());
                 }
-                
+
                 if (this.onSave) this.onSave();
                 this.close();
             });
@@ -13045,24 +13220,24 @@ ID: ${taskData.gid}
                     });
                 });
             });
-            
+
             // v4.5.0: Переключение облачного провайдера
             this.shadowRoot.querySelectorAll('input[name="cloud-provider"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const provider = e.target.value;
                     const googleSection = this.shadowRoot.getElementById('google-section');
                     const microsoftSection = this.shadowRoot.getElementById('microsoft-section');
-                    
+
                     if (googleSection) googleSection.style.display = provider === 'google' ? '' : 'none';
                     if (microsoftSection) microsoftSection.style.display = provider === 'microsoft' ? '' : 'none';
-                    
+
                     // Обновляем активный класс
                     this.shadowRoot.querySelectorAll('.provider-option').forEach(opt => {
                         opt.classList.toggle('active', opt.querySelector('input').value === provider);
                     });
                 });
             });
-            
+
             // v4.5.3: Toggle password visibility
             const togglePassBtn = this.shadowRoot.getElementById('toggle-password');
             const passwordInput = this.shadowRoot.getElementById('cloud-password');
@@ -13073,7 +13248,7 @@ ID: ${taskData.gid}
                     togglePassBtn.textContent = type === 'password' ? '👁️' : '🙈';
                 });
             }
-            
+
             // v4.5.3: Stop propagation для полей авторизации
             ['cloud-username', 'cloud-password'].forEach(id => {
                 const input = this.shadowRoot.getElementById(id);
@@ -13205,27 +13380,27 @@ ID: ${taskData.gid}
                     }
                 });
             }
-            
+
             // v4.5.2: Обработчик теста облачного подключения (простая проверка доступности)
             const testCloudBtn = this.shadowRoot.getElementById('test-cloud-connection');
             if (testCloudBtn) {
                 testCloudBtn.addEventListener('click', async () => {
                     const resultEl = this.shadowRoot.getElementById('cloud-test-result');
                     const googleUrl = this.shadowRoot.getElementById('google-script-url')?.value?.trim();
-                    
+
                     if (!googleUrl) {
                         resultEl.innerHTML = '<span style="color: orange;">⚠️ Введите Google Apps Script URL</span>';
                         return;
                     }
-                    
+
                     // Проверяем формат URL
                     if (!googleUrl.includes('script.google.com/macros')) {
                         resultEl.innerHTML = '<span style="color: orange;">⚠️ URL должен быть вида script.google.com/macros/s/.../exec</span>';
                         return;
                     }
-                    
+
                     resultEl.innerHTML = '<span style="color: #666;">⏳ Проверяю...</span>';
-                    
+
                     try {
                         await new Promise((resolve, reject) => {
                             GM_xmlhttpRequest({
@@ -13234,7 +13409,7 @@ ID: ${taskData.gid}
                                 timeout: 10000,
                                 onload: (res) => {
                                     if(DEBUG) console.log('Cloud test response:', res.status, res.responseText?.substring(0, 200));
-                                    
+
                                     // Google Apps Script на GET возвращает разные коды:
                                     // 200 - если есть doGet()
                                     // 404 - если нет doGet() но скрипт существует
@@ -13251,7 +13426,7 @@ ID: ${taskData.gid}
                                 ontimeout: () => reject(new Error('Таймаут. Попробуйте ещё раз'))
                             });
                         });
-                        
+
                         resultEl.innerHTML = '<span style="color: green;">✅ URL доступен</span>';
                     } catch (e) {
                         resultEl.innerHTML = '<span style="color: red;">❌ ' + e.message + '</span>';
@@ -13266,7 +13441,7 @@ ID: ${taskData.gid}
             }
         }
     }
-    
+
     // ===== v4.5.0: УНИФИЦИРОВАННЫЙ КЛАСС НАСТРОЕК ПОЛЕЙ =====
     class FieldConfigModal {
         constructor(parentShadowRoot, onUpdate) {
@@ -13299,7 +13474,7 @@ ID: ${taskData.gid}
             this.shadowRoot.appendChild(modal);
 
             this.attachEventListeners();
-            this.switchTab('fields');
+            this.switchTab('types');  // v4.5.5: исправлено - вкладка types вместо несуществующей fields
         }
 
         getStyles() {
@@ -13350,7 +13525,7 @@ ID: ${taskData.gid}
                 .unified-close-btn:hover {
                     color: #ffcdd2;
                 }
-                
+
                 /* Вкладки */
                 .unified-tabs {
                     display: flex;
@@ -13379,7 +13554,7 @@ ID: ${taskData.gid}
                     color: #1976D2;
                     border-bottom-color: #1976D2;
                 }
-                
+
                 /* Контент */
                 .unified-body {
                     padding: 20px;
@@ -13393,7 +13568,7 @@ ID: ${taskData.gid}
                 .tab-content.active {
                     display: block;
                 }
-                
+
                 /* Информационный блок */
                 .info-box {
                     background: #E3F2FD;
@@ -13405,7 +13580,7 @@ ID: ${taskData.gid}
                     color: #1565C0;
                 }
                 .info-box b { color: #0D47A1; }
-                
+
                 /* Поля */
                 .field-item {
                     display: flex;
@@ -13500,7 +13675,7 @@ ID: ${taskData.gid}
                     background: #ffebee;
                     border-color: #f44336;
                 }
-                
+
                 /* Aliases */
                 .field-aliases-row {
                     display: flex;
@@ -13540,7 +13715,7 @@ ID: ${taskData.gid}
                     background: #fff3e0;
                     border-color: #FF9800;
                 }
-                
+
                 /* Теги aliases */
                 .alias-field-item {
                     flex-direction: column;
@@ -13645,7 +13820,7 @@ ID: ${taskData.gid}
                 .aliases-example-box b {
                     color: #1B5E20;
                 }
-                
+
                 /* Типы задач */
                 .type-selector-row {
                     display: flex;
@@ -13761,7 +13936,7 @@ ID: ${taskData.gid}
                     width: 16px;
                     height: 16px;
                 }
-                
+
                 /* Шаблон ТЗ */
                 .template-section {
                     margin-top: 20px;
@@ -13812,7 +13987,7 @@ ID: ${taskData.gid}
                     color: #2E7D32;
                     font-weight: 600;
                 }
-                
+
                 /* Используемые переменные в шаблоне */
                 .used-vars-section {
                     margin-top: 12px;
@@ -13867,7 +14042,7 @@ ID: ${taskData.gid}
                     color: #999;
                     font-style: italic;
                 }
-                
+
                 /* Добавление нового поля */
                 .add-field-section {
                     margin-top: 20px;
@@ -13918,7 +14093,7 @@ ID: ${taskData.gid}
                 .add-field-btn:hover {
                     background: #388E3C;
                 }
-                
+
                 /* Footer */
                 .unified-modal-footer {
                     padding: 16px 20px;
@@ -13976,12 +14151,12 @@ ID: ${taskData.gid}
                         <h3 class="unified-modal-title">⚙️ Настройка полей</h3>
                         <button class="unified-close-btn" id="close-unified-modal">&times;</button>
                     </div>
-                    
+
                     <div class="unified-tabs">
                         <button class="unified-tab" data-tab="aliases">🏷️ Aliases импорта</button>
                         <button class="unified-tab active" data-tab="types">📝 Типы задач</button>
                     </div>
-                    
+
                     <div class="unified-body">
                         <!-- Вкладка 1: Aliases -->
                         <div class="tab-content" id="tab-aliases">
@@ -13992,7 +14167,7 @@ ID: ${taskData.gid}
                             </div>
                             <div id="aliases-list"></div>
                         </div>
-                        
+
                         <!-- Вкладка 2: Типы задач -->
                         <div class="tab-content active" id="tab-types">
                             <div class="info-box">
@@ -14002,7 +14177,7 @@ ID: ${taskData.gid}
                             <div id="types-content"></div>
                         </div>
                     </div>
-                    
+
                     <div class="unified-modal-footer">
                         <div class="footer-left">
                             <button class="btn-reset" id="reset-settings">🔄 Сбросить всё</button>
@@ -14022,28 +14197,28 @@ ID: ${taskData.gid}
             this.shadowRoot.getElementById('cancel-settings').addEventListener('click', () => this.close());
             this.shadowRoot.getElementById('save-settings').addEventListener('click', () => this.save());
             this.shadowRoot.getElementById('reset-settings').addEventListener('click', () => this.reset());
-            
+
             // Вкладки
             this.shadowRoot.querySelectorAll('.unified-tab').forEach(tab => {
                 tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
             });
-            
+
             // НЕ закрываем по клику на overlay - только крестиком
         }
 
         switchTab(tabName) {
             this.currentTab = tabName;
-            
+
             // Обновляем активную вкладку
             this.shadowRoot.querySelectorAll('.unified-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabName);
             });
-            
+
             // Показываем контент
             this.shadowRoot.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.toggle('active', content.id === `tab-${tabName}`);
             });
-            
+
             // Рендерим контент вкладки
             if (tabName === 'fields') this.renderFieldsTab();
             if (tabName === 'aliases') this.renderAliasesTab();
@@ -14054,24 +14229,24 @@ ID: ${taskData.gid}
             const container = this.shadowRoot.getElementById('fields-list');
             const taskType = this.taskTypes[this.currentTypeId] || this.taskTypes['subdomain'];
             const enabledFields = taskType?.fields || [];
-            
+
             // Загружаем пользовательские поля
             const customFields = this.fieldSettings._customFields || [];
             const allFields = { ...FIELD_REGISTRY };
             customFields.forEach(cf => {
                 allFields[cf.id] = cf;
             });
-            
+
             const fieldsHTML = Object.entries(allFields).map(([fieldId, field]) => {
                 const fieldConfig = enabledFields.find(f => f.fieldId === fieldId);
                 const isEnabled = fieldConfig?.enabled ?? true;
                 const isRequired = fieldConfig?.required ?? false;
                 const isCustom = customFields.some(cf => cf.id === fieldId);
-                
+
                 return `
                     <div class="field-item" data-field-id="${fieldId}">
                         <span class="field-drag-handle">☰</span>
-                        <input type="checkbox" class="field-checkbox" data-field-id="${fieldId}" 
+                        <input type="checkbox" class="field-checkbox" data-field-id="${fieldId}"
                                ${isEnabled ? 'checked' : ''} title="Показывать в таблице" />
                         <div class="field-info">
                             <div class="field-header">
@@ -14089,7 +14264,7 @@ ID: ${taskData.gid}
                     </div>
                 `;
             }).join('');
-            
+
             // Секция добавления нового поля
             const addFieldSection = `
                 <div class="add-field-section">
@@ -14116,9 +14291,9 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             container.innerHTML = fieldsHTML + addFieldSection;
-            
+
             // Обработчики
             container.querySelectorAll('.field-edit-btn').forEach(btn => {
                 btn.addEventListener('click', () => this.editField(btn.dataset.fieldId));
@@ -14127,7 +14302,7 @@ ID: ${taskData.gid}
                 btn.addEventListener('click', () => this.deleteCustomField(btn.dataset.fieldId));
             });
             this.shadowRoot.getElementById('add-new-field-btn')?.addEventListener('click', () => this.addNewField());
-            
+
             // Блокируем всплытие для input
             container.querySelectorAll('input[type="text"]').forEach(input => {
                 ['keydown', 'keyup', 'input'].forEach(evt => {
@@ -14135,21 +14310,21 @@ ID: ${taskData.gid}
                 });
             });
         }
-        
+
         // Редактирование поля
         editField(fieldId) {
             const customFields = this.fieldSettings._customFields || [];
             const customField = customFields.find(cf => cf.id === fieldId);
             const field = customField || FIELD_REGISTRY[fieldId];
-            
+
             if (!field) return;
-            
+
             const newLabel = prompt(`Название поля "${field.label}":`, field.label);
             if (newLabel === null) return;
-            
+
             const newVariable = prompt(`Переменная (например {{${fieldId}}}):`, field.variable || `{{${fieldId}}}`);
             if (newVariable === null) return;
-            
+
             if (customField) {
                 // Редактируем кастомное поле
                 customField.label = newLabel;
@@ -14164,33 +14339,33 @@ ID: ${taskData.gid}
                     variable: newVariable
                 };
             }
-            
+
             this.renderFieldsTab();
         }
-        
+
         // Добавление нового поля
         addNewField() {
             const label = this.shadowRoot.getElementById('new-field-label').value.trim();
             const id = this.shadowRoot.getElementById('new-field-id').value.trim();
             const type = this.shadowRoot.getElementById('new-field-type').value;
-            
+
             if (!label || !id) {
                 showToast('Заполните название и ID поля');
                 return;
             }
-            
+
             // Проверяем уникальность ID
             if (FIELD_REGISTRY[id] || (this.fieldSettings._customFields || []).some(cf => cf.id === id)) {
                 showToast('Поле с таким ID уже существует');
                 return;
             }
-            
+
             // Валидация ID (только латиница и цифры)
             if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(id)) {
                 showToast('ID должен начинаться с буквы и содержать только латиницу, цифры и _');
                 return;
             }
-            
+
             const newField = {
                 id: id,
                 label: label,
@@ -14200,46 +14375,46 @@ ID: ${taskData.gid}
                 aliases: [label.toLowerCase(), id.toLowerCase()],
                 isCustom: true
             };
-            
+
             if (!this.fieldSettings._customFields) {
                 this.fieldSettings._customFields = [];
             }
             this.fieldSettings._customFields.push(newField);
-            
+
             // Очищаем форму
             this.shadowRoot.getElementById('new-field-label').value = '';
             this.shadowRoot.getElementById('new-field-id').value = '';
-            
+
             this.renderFieldsTab();
             showToast(' Поле "' + label + '" добавлено!\n\nПеременная: {{' + id + '}}');
         }
-        
+
         // Удаление кастомного поля
         deleteCustomField(fieldId) {
             if (!confirm(`Удалить поле "${fieldId}"?`)) return;
-            
+
             if (this.fieldSettings._customFields) {
                 this.fieldSettings._customFields = this.fieldSettings._customFields.filter(cf => cf.id !== fieldId);
             }
-            
+
             this.renderFieldsTab();
         }
 
         renderAliasesTab() {
             const container = this.shadowRoot.getElementById('aliases-list');
-            
+
             // Включаем custom fields
             const customFields = this.fieldSettings._customFields || [];
             const allFields = { ...FIELD_REGISTRY };
             customFields.forEach(cf => {
                 allFields[cf.id] = cf;
             });
-            
+
             const aliasesHTML = Object.entries(allFields).map(([fieldId, field]) => {
                 const userAliases = this.fieldSettings[fieldId]?.aliases;
                 const aliases = userAliases || field.aliases || [];
                 const isCustom = field.isCustom || customFields.some(cf => cf.id === fieldId);
-                
+
                 // Генерируем теги
                 const tagsHTML = aliases.map((alias, idx) => `
                     <span class="alias-tag" data-field-id="${fieldId}" data-index="${idx}">
@@ -14247,7 +14422,7 @@ ID: ${taskData.gid}
                         <button class="alias-tag-remove" data-field-id="${fieldId}" data-alias="${alias}">×</button>
                     </span>
                 `).join('');
-                
+
                 return `
                     <div class="field-item alias-field-item" data-field-id="${fieldId}">
                         <div class="field-info" style="width: 100%;">
@@ -14260,7 +14435,7 @@ ID: ${taskData.gid}
                                 <div class="aliases-tags" data-field-id="${fieldId}">
                                     ${tagsHTML}
                                     <div class="alias-add-inline">
-                                        <input type="text" class="alias-add-input" data-field-id="${fieldId}" 
+                                        <input type="text" class="alias-add-input" data-field-id="${fieldId}"
                                                placeholder="новый alias..." />
                                         <button class="alias-add-btn" data-field-id="${fieldId}" title="Добавить">+</button>
                                     </div>
@@ -14271,7 +14446,7 @@ ID: ${taskData.gid}
                     </div>
                 `;
             }).join('');
-            
+
             // Информация о том как работают aliases
             const infoSection = `
                 <div class="aliases-example-box">
@@ -14279,9 +14454,9 @@ ID: ${taskData.gid}
                     <b>Пример:</b> Если в Excel колонка "Дроп", добавьте alias "дроп" для поля "Домен".
                 </div>
             `;
-            
+
             container.innerHTML = aliasesHTML + infoSection;
-            
+
             // Обработчики для добавления alias
             container.querySelectorAll('.alias-add-input').forEach(input => {
                 // Единый обработчик keydown
@@ -14297,13 +14472,13 @@ ID: ${taskData.gid}
                         }
                     }
                 });
-                
+
                 // Блокируем всплытие для остальных событий
                 ['keyup', 'input'].forEach(evt => {
                     input.addEventListener(evt, e => e.stopPropagation());
                 });
             });
-            
+
             // Обработчики для кнопки добавления
             container.querySelectorAll('.alias-add-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -14322,7 +14497,7 @@ ID: ${taskData.gid}
                     }
                 });
             });
-            
+
             // Обработчики для удаления alias
             container.querySelectorAll('.alias-tag-remove').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -14330,7 +14505,7 @@ ID: ${taskData.gid}
                     this.removeAlias(btn.dataset.fieldId, btn.dataset.alias);
                 });
             });
-            
+
             // Обработчик сброса aliases
             container.querySelectorAll('.alias-reset-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -14345,35 +14520,35 @@ ID: ${taskData.gid}
                 });
             });
         }
-        
+
         // Добавление alias
         addAlias(fieldId, alias) {
             if (!alias) return;
-            
+
             const aliasLower = alias.toLowerCase().trim();
             if (!aliasLower) return;
-            
+
             // Инициализируем aliases если нужно
             if (!this.fieldSettings[fieldId] || !Array.isArray(this.fieldSettings[fieldId].aliases)) {
                 const defaultField = FIELD_REGISTRY[fieldId];
                 const customField = (this.fieldSettings._customFields || []).find(cf => cf.id === fieldId);
                 const defaultAliases = defaultField?.aliases || customField?.aliases || [];
-                this.fieldSettings[fieldId] = { 
+                this.fieldSettings[fieldId] = {
                     ...this.fieldSettings[fieldId],
-                    aliases: [...defaultAliases] 
+                    aliases: [...defaultAliases]
                 };
             }
-            
+
             // Проверяем дубликат
             if (this.fieldSettings[fieldId].aliases.includes(aliasLower)) {
                 return;
             }
-            
+
             this.fieldSettings[fieldId].aliases.push(aliasLower);
             if(DEBUG) console.log('Added alias:', fieldId, aliasLower, this.fieldSettings);
             this.renderAliasesTab();
         }
-        
+
         // Удаление alias
         removeAlias(fieldId, alias) {
             // Инициализируем aliases если нужно
@@ -14381,12 +14556,12 @@ ID: ${taskData.gid}
                 const defaultField = FIELD_REGISTRY[fieldId];
                 const customField = (this.fieldSettings._customFields || []).find(cf => cf.id === fieldId);
                 const defaultAliases = defaultField?.aliases || customField?.aliases || [];
-                this.fieldSettings[fieldId] = { 
+                this.fieldSettings[fieldId] = {
                     ...this.fieldSettings[fieldId],
-                    aliases: [...defaultAliases] 
+                    aliases: [...defaultAliases]
                 };
             }
-            
+
             this.fieldSettings[fieldId].aliases = this.fieldSettings[fieldId].aliases.filter(a => a !== alias);
             console.log('Removed alias:', fieldId, alias, this.fieldSettings);
             this.renderAliasesTab();
@@ -14395,27 +14570,27 @@ ID: ${taskData.gid}
         renderTypesTab() {
             const container = this.shadowRoot.getElementById('types-content');
             const taskType = this.taskTypes[this.currentTypeId];
-            
+
             // Включаем custom fields
             const customFields = this.fieldSettings._customFields || [];
             const allFields = { ...FIELD_REGISTRY };
             customFields.forEach(cf => {
                 allFields[cf.id] = cf;
             });
-            
+
             // Проверяем является ли тип встроенным
             const isBuiltInType = ['subdomain', 'redirect301', 'redirect404', 'disableAlternateDomain', 'hreflang', 'reindex', 'clone', 'audit'].includes(this.currentTypeId);
-            
+
             // Селектор типа задачи
             const typesOptions = Object.entries(this.taskTypes)
                 .map(([id, type]) => `<option value="${id}" ${id === this.currentTypeId ? 'selected' : ''}>${type.icon || '📋'} ${type.name}</option>`)
                 .join('');
-            
+
             // Поля для текущего типа
             const fieldsGrid = Object.entries(allFields).map(([fieldId, field]) => {
                 const fieldConfig = taskType?.fields?.find(f => f.fieldId === fieldId);
                 const isEnabled = fieldConfig?.enabled ?? false;
-                
+
                 return `
                     <div class="type-field-item">
                         <input type="checkbox" id="type-field-${fieldId}" data-field-id="${fieldId}"
@@ -14424,12 +14599,12 @@ ID: ${taskData.gid}
                     </div>
                 `;
             }).join('');
-            
+
             // Извлекаем переменные из текущего шаблона
             const tzTemplate = taskType?.tzTemplate || '';
             const usedVarsMatches = tzTemplate.match(/\{\{(\w+)\}\}/g) || [];
             const usedVars = [...new Set(usedVarsMatches.map(m => m.replace(/\{\{|\}\}/g, '')))];
-            
+
             // Маппинг переменных к названиям
             const varLabels = {
                 'domain': 'Домен',
@@ -14448,14 +14623,14 @@ ID: ${taskData.gid}
                 'amp': 'AMP',
                 'subtasks': 'Подзадачи'
             };
-            
+
             // Вспомогательные поля (не проверяются при генерации)
             const auxiliaryFields = ['redirect301', 'redirect404', 'redirect', 'dmca', 'amp', 'assignee', 'subtasks', 'priority', 'cms', 'notes'];
-            
+
             // Разделяем переменные на проверяемые и вспомогательные
             const checkedVars = usedVars.filter(v => !auxiliaryFields.includes(v));
             const auxVars = usedVars.filter(v => auxiliaryFields.includes(v));
-            
+
             // Генерируем теги используемых переменных
             let usedVarsHtml = '';
             if (checkedVars.length > 0) {
@@ -14468,7 +14643,7 @@ ID: ${taskData.gid}
             if (!usedVarsHtml) {
                 usedVarsHtml = '<span class="no-vars">Нет переменных в шаблоне</span>';
             }
-            
+
             // Доступные переменные из полей
             const availableVars = Object.entries(allFields)
                 .map(([id, f]) => {
@@ -14476,7 +14651,7 @@ ID: ${taskData.gid}
                     return `<code class="${isUsed ? 'var-used' : ''}">${f.variable || '{{' + id + '}}'}</code>`;
                 })
                 .join(' ');
-            
+
             // Дополнительные переменные (не в FIELD_REGISTRY)
             const extraVars = [
                 { var: '{{hreflangCode}}', label: 'hreflang код' },
@@ -14490,7 +14665,7 @@ ID: ${taskData.gid}
                 const isUsed = usedVars.includes(varName);
                 return `<code class="${isUsed ? 'var-used' : ''}">${v.var}</code>`;
             }).join(' ');
-            
+
             container.innerHTML = `
                 <div class="type-selector-row">
                     <div class="type-selector">
@@ -14503,23 +14678,23 @@ ID: ${taskData.gid}
                         <button class="type-add-btn" id="add-type-btn" title="Добавить новый тип">➕ Новый тип</button>
                     </div>
                 </div>
-                
+
                 <div class="type-name-display">
                     <span class="type-icon-large">${taskType?.icon || '📋'}</span>
                     <span class="type-name-large">${taskType?.name || 'Без названия'}</span>
                     ${!isBuiltInType ? '<span class="type-custom-badge">свой</span>' : ''}
                 </div>
-                
+
                 <div class="template-section">
                     <label>Шаблон ТЗ:</label>
                     <textarea class="template-textarea" id="type-template">${taskType?.tzTemplate || ''}</textarea>
-                    
+
                     <div class="used-vars-section">
                         <b>📋 Переменные в шаблоне:</b>
                         <div class="used-vars-list">${usedVarsHtml}</div>
                         <small class="used-vars-hint">Зелёные — проверяются при генерации ТЗ. Серые — вспомогательные (записываются при включении).</small>
                     </div>
-                    
+
                     <div class="template-variables">
                         <b>Все доступные переменные:</b><br>
                         <span style="font-size:11px;color:#666;">Поля:</span> ${availableVars}<br>
@@ -14527,87 +14702,87 @@ ID: ${taskData.gid}
                     </div>
                 </div>
             `;
-            
+
             // Обработчик смены типа
             this.shadowRoot.getElementById('type-select').addEventListener('change', (e) => {
                 this.saveCurrentTypeSettings();
                 this.currentTypeId = e.target.value;
                 this.renderTypesTab();
             });
-            
+
             // Кнопка редактирования
             this.shadowRoot.getElementById('edit-type-btn')?.addEventListener('click', () => this.editTaskType());
-            
+
             // Кнопка удаления
             this.shadowRoot.getElementById('delete-type-btn')?.addEventListener('click', () => this.deleteTaskType());
-            
+
             // Кнопка добавления
             this.shadowRoot.getElementById('add-type-btn')?.addEventListener('click', () => this.addTaskType());
-            
+
             // Блокируем всплытие для textarea
             const textarea = this.shadowRoot.getElementById('type-template');
             ['keydown', 'keyup', 'input'].forEach(evt => {
                 textarea.addEventListener(evt, e => e.stopPropagation());
             });
         }
-        
+
         // Редактирование типа задачи
         editTaskType() {
             const taskType = this.taskTypes[this.currentTypeId];
             if (!taskType) return;
-            
+
             const newIcon = prompt('Иконка (эмодзи):', taskType.icon || '📋');
             if (newIcon === null) return;
-            
+
             const newName = prompt('Название типа задачи:', taskType.name);
             if (newName === null || !newName.trim()) return;
-            
+
             taskType.icon = newIcon;
             taskType.name = newName.trim();
-            
+
             this.renderTypesTab();
         }
-        
+
         // Удаление типа задачи
         deleteTaskType() {
             const taskType = this.taskTypes[this.currentTypeId];
             if (!taskType) return;
-            
+
             if (!confirm('Удалить тип задачи "' + taskType.name + '"?\n\nЭто действие нельзя отменить.')) return;
-            
+
             delete this.taskTypes[this.currentTypeId];
-            
+
             // Переключаемся на первый доступный тип
             const remainingTypes = Object.keys(this.taskTypes);
             this.currentTypeId = remainingTypes[0] || 'subdomain';
-            
+
             this.renderTypesTab();
         }
-        
+
         // Добавление нового типа задачи
         addTaskType() {
             const icon = prompt('Иконка для нового типа (эмодзи):', '📋');
             if (icon === null) return;
-            
+
             const name = prompt('Название нового типа задачи:');
             if (!name || !name.trim()) {
                 showToast('Название не может быть пустым');
                 return;
             }
-            
+
             // Генерируем ID из названия
             const id = name.trim().toLowerCase()
                 .replace(/[^a-zа-яё0-9]/gi, '_')
                 .replace(/_+/g, '_')
                 .replace(/^_|_$/g, '')
                 .substring(0, 20);
-            
+
             // Проверяем уникальность
             if (this.taskTypes[id]) {
                 showToast('Тип с таким ID уже существует');
                 return;
             }
-            
+
             // Создаём новый тип с базовыми полями
             this.taskTypes[id] = {
                 id: id,
@@ -14626,16 +14801,16 @@ ID: ${taskData.gid}
 
 Домен: https://{{domain}}/`
             };
-            
+
             this.currentTypeId = id;
             this.renderTypesTab();
-            
+
             showToast(' Тип задачи "' + name + '" создан!\n\nНастройте поля и шаблон ТЗ.');
         }
 
         saveCurrentTypeSettings() {
             if (!this.taskTypes[this.currentTypeId]) return;
-            
+
             // Сохраняем настройки полей для текущего типа
             const fields = [];
             this.shadowRoot.querySelectorAll('#types-content .type-field-item input[type="checkbox"]').forEach(cb => {
@@ -14645,9 +14820,9 @@ ID: ${taskData.gid}
                     required: false
                 });
             });
-            
+
             const template = this.shadowRoot.getElementById('type-template')?.value || '';
-            
+
             this.taskTypes[this.currentTypeId].fields = fields;
             this.taskTypes[this.currentTypeId].tzTemplate = template;
         }
@@ -14656,11 +14831,11 @@ ID: ${taskData.gid}
             // Сохраняем aliases и custom fields из this.fieldSettings
             console.log('Saving fieldSettings:', this.fieldSettings);
             saveFieldSettings(this.fieldSettings);
-            
+
             // Сохраняем настройки типа задачи
             this.saveCurrentTypeSettings();
             saveTaskTypes(this.taskTypes);
-            
+
             console.log('Settings saved to localStorage');
             showToast(' Настройки сохранены!');
             this.close();
@@ -14669,15 +14844,15 @@ ID: ${taskData.gid}
 
         reset() {
             if (!confirm('Сбросить ВСЕ настройки к значениям по умолчанию?\n\nЭто удалит пользовательские aliases и настройки типов задач.')) return;
-            
+
             localStorage.removeItem(FIELD_SETTINGS_KEY);
             localStorage.removeItem(TASK_TYPES_KEY);
-            
+
             this.fieldSettings = {};
             this.taskTypes = loadTaskTypes();
-            
+
             this.switchTab(this.currentTab);
-            
+
             showToast(' Настройки сброшены к значениям по умолчанию.');
         }
 
@@ -14687,7 +14862,7 @@ ID: ${taskData.gid}
             }
         }
     }
-    
+
     // ===== КЛАСС ДЛЯ МОДАЛЬНОГО ОКНА ВЫБОРА ДОМЕНОВ =====
     class SubtaskTemplatesModal {
         constructor(parentShadowRoot, onApply, dashboardTasks = null) {
@@ -14764,7 +14939,7 @@ ID: ${taskData.gid}
 
         getHTML() {
             const departments = Object.keys(this.templates);
-            
+
             // v4.5.2: Собираем все закреплённые подзадачи из всех отделов
             const pinnedSubtasks = [];
             Object.entries(this.templates).forEach(([dept, subtasks]) => {
@@ -14776,7 +14951,7 @@ ID: ${taskData.gid}
                     });
                 }
             });
-            
+
             return `
                 <div class="templates-modal-content">
                     <div class="templates-modal-header">
@@ -14791,7 +14966,7 @@ ID: ${taskData.gid}
                             <span class="pinned-subtasks-hint">(добавляются автоматически)</span>
                         </div>
                         <div class="pinned-subtasks-list">
-                            ${pinnedSubtasks.length === 0 
+                            ${pinnedSubtasks.length === 0
                                 ? '<div class="pinned-subtasks-empty">Нет закреплённых подзадач</div>'
                                 : pinnedSubtasks.map(s => {
                                     const meta = [];
@@ -14915,7 +15090,7 @@ ID: ${taskData.gid}
                         if (template.assignee) meta.push(`Ответственный: ${getUserName(template.assignee)}`);
                         if (template.pinned) meta.push('<span style="color:#4CAF50;">Авто</span>');
                         const metaStr = meta.length > 0 ? meta.join(' | ') : '<span style="color:#999;">Без параметров</span>';
-                        
+
                         return `
                         <div class="template-item">
                             <input type="checkbox"
@@ -15158,10 +15333,10 @@ ID: ${taskData.gid}
             if (template) {
                 template.pinned = !template.pinned;
                 saveSubtaskTemplates(this.templates);
-                
+
                 // v4.5.2: Динамическое добавление/удаление подзадачи во все текущие задачи
                 const dashboardTasks = this.dashboardTasks || (typeof window._seoAutomationGetTasks === 'function' ? window._seoAutomationGetTasks() : null);
-                
+
                 if (dashboardTasks && Array.isArray(dashboardTasks) && dashboardTasks.length > 0) {
                     if (template.pinned) {
                         // Добавляем подзадачу ко всем задачам где её ещё нет
@@ -15188,7 +15363,7 @@ ID: ${taskData.gid}
                         showToast(`📌 "${template.name}" откреплена`, 'info');
                     }
                 }
-                
+
                 this.updateUI();  // v4.5.2: updateUI вместо renderTemplates для обновления секции закреплённых
             }
         }
@@ -15283,7 +15458,7 @@ ID: ${taskData.gid}
 
         initializeStorage();
         if(DEBUG) console.log('✓ Хранилище инициализировано');
-        
+
         // v4.5.3: Проверка авторизации при первом запуске
         if (!isCloudAuthSet()) {
             if(DEBUG) console.log('🔐 Первый запуск - показываем настройку авторизации');
@@ -15295,11 +15470,11 @@ ID: ${taskData.gid}
             continueInit();
         }
     }
-    
+
     function continueInit() {
         // Глобальная ссылка на dashboard
         let dashboardInstance = null;
-        
+
         // v4.5.2: Глобальная функция для доступа к tasks Dashboard
         window._seoAutomationGetTasks = () => dashboardInstance ? dashboardInstance.tasks : null;
 
@@ -15352,10 +15527,10 @@ ID: ${taskData.gid}
         }
 
         createTriggerButton();
-        
+
         // v4.3.7: Синхронизация маппинга Asana → Rocket.Chat при старте
         setTimeout(() => syncAsanaRocketMapping(), 1000);
-        
+
         // Фоновое обновление кешей (1 раз в день)
         if (isTeamMembersCacheExpired()) {
             setTimeout(() => refreshTeamMembersCacheInBackground(), 2000);
