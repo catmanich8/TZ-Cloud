@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         SEO Subdomain Automation Suite v4.5.5 - Universal Task Types
+// @name         SEO Subdomain Automation Suite v4.6.16
 // @namespace    http://tampermonkey.net/
-// @version      4.5.5
-// @description  v4.5.5 - Фоновый режим, прогресс-бар, retry, улучшенные логи
+// @version      4.6.16
+// @description  v4.6.16 - Отдел автоматически добавляется в ТЗ
 // @author       Timur - Head of Automation
 // @match        https://app.asana.com/*
 // @match        https://best-seo-crm.top/*
@@ -177,9 +177,13 @@
                 'Flex': '@username'       // TODO: указать получателя
             }
         },
-        // v4.5.3: Облачные настройки с дефолтами
+        // v4.5.6: Облачные настройки с 5 endpoints для load balancing
         cloud: {
-            defaultGoogleScriptUrl: 'https://script.google.com/macros/s/AKfycbxxyizbE5UDw5bzBw-3lJZdDh7EhdmaBmIiN1BxtuqBwMNYUJYFoI6KIGFR7UCnk1O_4g/exec'
+            defaultGoogleScriptUrl: `https://script.google.com/macros/s/AKfycbwq08qRMZYNgUqOg6weME7rseCOaQhR1P-_qA2tb9gKhpl907a0esax-43vvwBuxpiN/exec
+https://script.google.com/macros/s/AKfycbyWW9UvRXSPAU7wtkamoBvb9PQMC2Ec_uxv5Dsa5q9mOAK4ranAPFSXAn9QhJuLLFy7tw/exec
+https://script.google.com/macros/s/AKfycbxX1DGUQcozFg2qCEYwOXXNl3rRzJy0XRuPoags74NowBb7B8IINr-Ff2xkXlrsfonmRw/exec
+https://script.google.com/macros/s/AKfycbxYiSUd2dYm5YZLXi6tzcap-vWcPd5bigplbD-uzrxnCvIELwjx3IRw1x7ixHU1EhDnHA/exec
+https://script.google.com/macros/s/AKfycbzVKwCJ4T2jS75ckn3c1PBQaTp_N_0jo-aM2_TrwnwKT3N-k9LVqvosGwKTP2E0cF-5BA/exec`
             // Credentials устанавливаются пользователем при первом запуске
         }
     };
@@ -554,6 +558,51 @@
         {
             name: 'Универсальный (ru-KZ)',
             code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="ru" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="ru-KZ" href="https://{{newSub}}/" />'
+        },
+        // v4.5.6: Новые hreflang шаблоны
+        {
+            name: 'DE',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="de" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'PL',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="pl" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'TR',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="tr" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'FR',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="fr" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'IT',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="it" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'EN',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="en" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'ES',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="es" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'BN',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="bn" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'CS',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="cs" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'RU-RU',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="ru-RU" href="https://{{newSub}}/" />'
+        },
+        {
+            name: 'TR-TR + AZ-TR',
+            code: '<link rel="canonical" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="x-default" href="https://{{domain}}/" />\n<link rel="alternate" hreflang="tr-TR" href="https://{{newSub}}/" />\n<link rel="alternate" hreflang="az-TR" href="https://{{newSub}}/" />'
         }
     ];
 
@@ -718,12 +767,22 @@
         },
         toUrl: {
             id: 'toUrl',
-            label: 'URL куда',
+            label: 'URL дропа (301/404)',
             type: 'text',
             variable: '{{toUrl}}',
-            placeholder: 'https://new.example.com/page',
+            placeholder: 'https://drop.example.com/',
             width: 'large',
-            aliases: ['url куда', 'to url', 'target', 'destination', 'цель']
+            aliases: ['url дропа', 'tourl', 'to url', 'url куда', 'drop url', 'дроп', 'target url', 'целевой url', 'url 301', 'url 404', '301/404']
+        },
+        // v4.5.6: URL страниц для отдачи 404 (может быть несколько)
+        oldUrl: {
+            id: 'oldUrl',
+            label: 'oldURL',
+            type: 'textarea',
+            variable: '{{oldUrl}}',
+            placeholder: 'https://site.com/page1/\nhttps://site.com/page2/',
+            width: 'large',
+            aliases: ['oldurl', 'old url', 'url 404', 'страницы 404', 'старые url', 'старые страницы', 'pages 404', 'url для 404']
         },
 
         // === Кастомные текстовые поля ===
@@ -866,60 +925,85 @@
 
     // ===== v4.5.0: ТИПЫ ЗАДАЧ (шаблоны) =====
     const DEFAULT_TASK_TYPES = {
+        // v4.5.7: Обновлённые шаблоны согласно ТЗ
         subdomain: {
             id: 'subdomain',
-            name: 'Смена поддомена',
+            name: 'Повторная смена поддомена',
             icon: '🌐',
             fields: [
                 { fieldId: 'taskName', enabled: true, required: true },
                 { fieldId: 'department', enabled: true, required: false },
                 { fieldId: 'domain', enabled: true, required: false },
                 { fieldId: 'oldSub', enabled: true, required: false },
-                { fieldId: 'redirect', enabled: true, required: false },
                 { fieldId: 'newSub', enabled: true, required: false },
-                { fieldId: 'alternateDomain', enabled: true, required: false },
                 { fieldId: 'hreflang', enabled: true, required: false },
-                { fieldId: 'priority', enabled: true, required: false },
-                { fieldId: 'cms', enabled: false, required: false },
-                { fieldId: 'dmca', enabled: false, required: false },
                 { fieldId: 'amp', enabled: false, required: false },
+                { fieldId: 'priority', enabled: true, required: false },
                 { fieldId: 'notes', enabled: false, required: false }
             ],
-            // Шаблон ТЗ согласно образцу пользователя
-            tzTemplate: `Если есть 301 редирект:
-1) Снести 301 редирект с https://{{domain}}/ на https://{{domain}}/page/
-
-2) Отдать 404 для страниц:
-https://{{domain}}/page/ (может быть с / и без / на конце)
+            tzTemplate: `1) Отключить поддомен:
 https://{{oldSub}}/
-https://{{domain}}/hreflang/ (может быть несколько) и (может быть с / и без / на конце)
 
-Если есть домен-подмена:
-3) Домен подмены отключить и не продлять:
-https://{{alternateDomain}}/
-
-4) Создать страницу на дропе (дубль главной):
+2) Создать страницу на дропе (дубль главной):
 https://{{newSub}}/
 
-5) На главной странице и внутряке (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
+3) На главной странице и внутряке (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
 {{hreflangCode}}
 Меняем старые канониклы и хрефланги на новые
 
-Если надо:
-6) Актуализировать ссылки в (выбрать одно или несколько: футере, хедере, боковом меню, sitemap)
-
 Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`,
-            subtaskTemplates: ['SEO', 'DEV', 'Актуализация ссылок'],
+            subtaskTemplates: ['SEO', 'DEV'],
             reportColumns: ['domain', 'asanaUrl']
         },
         redirect301: {
             id: 'redirect301',
-            name: 'Настройка 301 редиректа',
+            name: 'Снос 301 и установка поддомена',
             icon: '↪️',
-            tzTemplate: `1) Настроить 301 редирект:
-https://{{oldSub}}/ → https://{{newSub}}/
+            fields: [
+                { fieldId: 'taskName', enabled: true, required: true },
+                { fieldId: 'department', enabled: true, required: false },
+                { fieldId: 'domain', enabled: true, required: false },
+                { fieldId: 'toUrl', enabled: true, required: false },
+                { fieldId: 'oldUrl', enabled: true, required: false },
+                { fieldId: 'newSub', enabled: true, required: false },
+                { fieldId: 'hreflang', enabled: true, required: false },
+                { fieldId: 'amp', enabled: false, required: false },
+                { fieldId: 'notes', enabled: false, required: false }
+            ],
+            tzTemplate: `1) Снести 301 редирект с https://{{domain}}/ на https://{{toUrl}}/
 
-2) Проверить корректность редиректа`
+{{oldUrlFormatted}}
+
+2) Создать страницу на дропе (дубль главной):
+https://{{newSub}}/
+
+3) На главной странице и поддомене (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
+{{hreflangCode}}
+Меняем старые канониклы и хрефланги на новые
+
+Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
+        },
+        // v4.5.7: НОВЫЙ шаблон - Запуск на поддомене
+        subdomainLaunch: {
+            id: 'subdomainLaunch',
+            name: 'Запуск на поддомене',
+            icon: '🚀',
+            fields: [
+                { fieldId: 'taskName', enabled: true, required: true },
+                { fieldId: 'department', enabled: true, required: false },
+                { fieldId: 'domain', enabled: true, required: false },
+                { fieldId: 'newSub', enabled: true, required: false },
+                { fieldId: 'hreflang', enabled: true, required: false },
+                { fieldId: 'notes', enabled: false, required: false }
+            ],
+            tzTemplate: `1) Создать страницу на дропе (дубль главной):
+https://{{newSub}}/
+
+2) На главной странице и поддомене (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
+{{hreflangCode}}
+Меняем старые канониклы и хрефланги на новые
+
+Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
         },
         redirect404: {
             id: 'redirect404',
@@ -934,18 +1018,32 @@ https://{{oldSub}}/
         },
         disableAlternateDomain: {
             id: 'disableAlternateDomain',
-            name: 'Отключение домена подмены',
+            name: 'Отключить подмену и внедрить поддомен',
             icon: '🔌',
             fields: [
                 { fieldId: 'taskName', enabled: true, required: true },
-                { fieldId: 'department', enabled: true, required: true },
-                { fieldId: 'domain', enabled: true, required: true },
-                { fieldId: 'alternateDomain', enabled: true, required: true }
+                { fieldId: 'department', enabled: true, required: false },
+                { fieldId: 'domain', enabled: true, required: false },
+                { fieldId: 'oldUrl', enabled: true, required: false },
+                { fieldId: 'alternateDomain', enabled: true, required: false },
+                { fieldId: 'newSub', enabled: true, required: false },
+                { fieldId: 'hreflang', enabled: true, required: false },
+                { fieldId: 'amp', enabled: false, required: false },
+                { fieldId: 'notes', enabled: false, required: false }
             ],
-            tzTemplate: `Домен подмены отключить и не продлять:
+            tzTemplate: `{{oldUrlFormatted}}
+
+1) Домен подмены отключить и не продлять:
 https://{{alternateDomain}}/
 
-Основной домен: https://{{domain}}/`
+2) Создать страницу на дропе (дубль главной):
+https://{{newSub}}/
+
+3) На главной странице и внутряке (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
+{{hreflangCode}}
+Меняем старые канониклы и хрефланги на новые
+
+Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
         },
         hreflang: {
             id: 'hreflang',
@@ -1061,8 +1159,9 @@ https://{{alternateDomain}}/
 
         // Специальные поля для совместимости со старым кодом
         task.subtasks = [];
-        task.redirect301 = true;
-        task.redirect404 = false;
+        // v4.5.7: 404 по умолчанию (чаще используется чем 301)
+        task.redirect301 = false;
+        task.redirect404 = true;
         task.templateIndex = '0';
 
         return task;
@@ -1214,13 +1313,13 @@ https://{{alternateDomain}}/
 
         .table-header {
             display: grid;
-            grid-template-columns: 35px 40px 180px 90px 140px 160px 160px 120px 100px 90px 80px 50px 50px 120px 45px 60px 70px;
+            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 50px 100px 45px 55px 65px;
             gap: 6px;
             padding: 12px 10px;
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: #fff;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -1250,7 +1349,7 @@ https://{{alternateDomain}}/
 
         .task-row {
             display: grid;
-            grid-template-columns: 35px 40px 180px 90px 140px 160px 160px 120px 100px 90px 80px 50px 50px 120px 45px 60px 70px;
+            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 50px 100px 45px 55px 65px;
             gap: 6px;
             padding: 10px;
             border-bottom: 1px solid #e0e0e0;
@@ -1497,6 +1596,70 @@ https://{{alternateDomain}}/
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
+        /* v4.6.12: Счётчик oldUrl - кликабельный */
+        .oldurl-count {
+            background: #FF9800;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            min-width: 40px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+
+        .oldurl-count:hover {
+            background: #F57C00;
+        }
+
+        .oldurl-count.empty {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .oldurl-count.empty:hover {
+            background: #bdbdbd;
+        }
+
+        .oldurl-count[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: pre-line;
+            z-index: 1000;
+            margin-bottom: 6px;
+            min-width: 180px;
+            max-width: 300px;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .oldurl-count[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -1px;
+            z-index: 1001;
+        }
+
         .cell-actions {
             display: flex;
             align-items: center;
@@ -1569,6 +1732,16 @@ https://{{alternateDomain}}/
         /* v4.5.2: Для select обязательных пустых */
         select.input-required-empty {
             background: #FFF3E0 !important;
+        }
+        /* v4.6.0: Для textarea и input в ячейках обязательных пустых */
+        textarea.input-required-empty {
+            background: #FFF3E0 !important;
+        }
+        .cell-tourl input.input-required-empty,
+        .cell-altdomain input.input-required-empty,
+        .cell-oldurl textarea.input-required-empty {
+            background: #FFF3E0 !important;
+            border-color: #FFB74D !important;
         }
         .input-warning-tooltip {
             position: absolute;
@@ -1652,7 +1825,7 @@ https://{{alternateDomain}}/
             color: #666;
             font-style: italic;
         }
-        .cell-oldsub, .cell-newsub, .cell-altdomain {
+        .cell-oldsub, .cell-newsub, .cell-altdomain, .cell-tourl, .cell-oldurl {
             position: relative;
         }
 
@@ -1660,7 +1833,7 @@ https://{{alternateDomain}}/
             position: relative;
         }
 
-        .cell-altdomain input {
+        .cell-altdomain input, .cell-tourl input {
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #ddd;
@@ -1670,7 +1843,28 @@ https://{{alternateDomain}}/
             background: #fff;
             color: #333;
         }
-        .cell-altdomain input:focus {
+        .cell-altdomain input:focus, .cell-tourl input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .cell-oldurl .cell-with-btn {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+        }
+        .cell-oldurl textarea {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
+            background: #fff;
+            color: #333;
+            min-height: 32px;
+            resize: vertical;
+        }
+        .cell-oldurl textarea:focus {
             outline: none;
             border-color: #4CAF50;
         }
@@ -4165,6 +4359,52 @@ https://{{alternateDomain}}/
         return domain;
     }
 
+    // v4.6.10: Парсинг oldUrl с разделением по типам (301/404)
+    // Формат хранения: url|type на каждой строке
+    function parseOldUrls(oldUrlField) {
+        const result = { urls301: [], urls404: [], all: [] };
+        if (!oldUrlField) return result;
+        
+        const lines = oldUrlField.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+            const parts = line.split('|');
+            const url = parts[0].trim();
+            const type = (parts[1] || '404').trim();
+            
+            if (url) {
+                result.all.push(url);
+                if (type === '301') {
+                    result.urls301.push(url);
+                } else {
+                    result.urls404.push(url);
+                }
+            }
+        }
+        return result;
+    }
+
+    // v4.6.10: Форматирование oldUrl для отображения (без типов)
+    function formatOldUrlForDisplay(oldUrlField) {
+        const parsed = parseOldUrls(oldUrlField);
+        return parsed.all.join('\n');
+    }
+
+    // v4.6.14: Форматирование oldUrl для ТЗ (с разделением по типам)
+    function formatOldUrlForTZ(oldUrlField) {
+        const parsed = parseOldUrls(oldUrlField);
+        const sections = [];
+        
+        if (parsed.urls404.length > 0) {
+            sections.push('Отдать 404 для страниц:\n' + parsed.urls404.join('\n'));
+        }
+        
+        if (parsed.urls301.length > 0) {
+            sections.push('Снести 301 редирект для страниц:\n' + parsed.urls301.join('\n'));
+        }
+        
+        return sections.join('\n\n');
+    }
+
     function getDomainVariants(domain) {
         const normalized = normalizeDomain(domain);
         if (!normalized) return [];
@@ -4475,18 +4715,12 @@ https://{{alternateDomain}}/
         }
 
         if (type === 'newSub') {
-            if (!site || !site.currentSubdomain) {
-                return { status: 'not-found', message: 'Текущий поддомен не задан' };
+            // v4.5.6: Новый поддомен НЕ проверяем в базе - его там ещё нет
+            // Просто проверяем что это валидный формат поддомена
+            if (value && value.includes('.')) {
+                return { status: 'valid' };
             }
-
-            if (normalizeDomain(site.currentSubdomain) === normalizedValue) {
-                const cmp = compareUrls(site.currentSubdomain);
-                if (!cmp.match) {
-                    return { status: 'www-mismatch', dbValue: site.currentSubdomain, message: cmp.message };
-                }
-                return { status: 'valid', dbValue: site.currentSubdomain };
-            }
-            return { status: 'not-found', message: 'Не совпадает с текущим: ' + site.currentSubdomain };
+            return { status: 'unknown' };
         }
 
         return { status: 'unknown' };
@@ -4990,6 +5224,25 @@ https://{{alternateDomain}}/
                         <div class="www-comparison" id="www-comparison" style="display: none;"></div>
                     </div>
 
+                    <!-- v4.5.7: Новые поля -->
+                    <div class="form-group">
+                        <label class="form-label">URL дропа (301/404)</label>
+                        <input type="text" class="form-input" id="toUrl" placeholder="https://drop.example.com/" autocomplete="off" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">URL для 404 (несколько - по строкам)</label>
+                        <div class="input-with-settings" style="position: relative;">
+                            <textarea class="form-input form-textarea" id="oldUrl" placeholder="https://site.com/page1/&#10;https://site.com/page2/" rows="3" style="flex: 1; resize: vertical;"></textarea>
+                            <span class="settings-icon-btn" id="manage-oldurl" title="Управление URL для 404">📜</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Домен подмены</label>
+                        <input type="text" class="form-input" id="alternateDomain" placeholder="alternate-domain.com" autocomplete="off" />
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label">Шаблон hreflang *</label>
                         <div class="input-with-settings">
@@ -5300,11 +5553,19 @@ https://{{alternateDomain}}/
 
                     // Заменяем переменные в шаблоне
                     tzContent = tzContent
+                        .replace(/\{\{department\}\}/g, task.department || '')
                         .replace(/\{\{domain\}\}/g, domain)
                         .replace(/\{\{oldSub\}\}/g, oldSub)
                         .replace(/\{\{newSub\}\}/g, newSub)
                         .replace(/\{\{alternateDomain\}\}/g, alternateDomain || oldSub)
                         .replace(/\{\{hreflangCode\}\}/g, hreflangCode)
+                        // v4.5.6: Новые переменные для редиректов
+                        .replace(/\{\{toUrl\}\}/g, task.toUrl || '')
+                        // v4.6.10: oldUrl с разделением по типам
+                        .replace(/\{\{oldUrl\}\}/g, formatOldUrlForDisplay(task.oldUrl))
+                        .replace(/\{\{oldUrl404\}\}/g, parseOldUrls(task.oldUrl).urls404.join('\n'))
+                        .replace(/\{\{oldUrl301\}\}/g, parseOldUrls(task.oldUrl).urls301.join('\n'))
+                        .replace(/\{\{oldUrlFormatted\}\}/g, formatOldUrlForTZ(task.oldUrl))
                         // Вспомогательные поля (для использования в шаблоне)
                         .replace(/\{\{redirect\}\}/g, task.redirect301 ? '301' : (task.redirect404 ? '404' : ''))
                         .replace(/\{\{redirect301\}\}/g, task.redirect301 ? 'Да' : 'Нет')
@@ -5316,6 +5577,11 @@ https://{{alternateDomain}}/
                         .replace(/\{\{assignee\}\}/g, assigneeName)
                         .replace(/\{\{subtasks\}\}/g, subtasksList)
                         .replace(/\{\{notes\}\}/g, task.notes || '');
+                    
+                    // v4.6.16: Автоматически добавляем отдел в начало ТЗ если заполнен
+                    if (task.department && !taskType.tzTemplate?.includes('{{department}}')) {
+                        tzContent = `Отдел: ${task.department}\n\n${tzContent}`;
+                    }
                 } else {
                     // Произвольная задача - название + все заполненные поля в табличном формате
                     const lines = [];
@@ -5327,6 +5593,18 @@ https://{{alternateDomain}}/
                     if (oldSub) lines.push(`Старый поддомен:\t${oldSub}`);
                     if (newSub) lines.push(`Новый поддомен:\t${newSub}`);
                     if (alternateDomain) lines.push(`Домен подмены:\t${alternateDomain}`);
+                    // v4.5.6: Новые поля
+                    if (task.toUrl) lines.push(`URL дропа:\t${task.toUrl}`);
+                    // v4.6.10: oldUrl с разделением по типам
+                    if (task.oldUrl) {
+                        const parsed = parseOldUrls(task.oldUrl);
+                        if (parsed.urls404.length > 0) {
+                            lines.push(`URL для 404:\n${parsed.urls404.join('\n')}`);
+                        }
+                        if (parsed.urls301.length > 0) {
+                            lines.push(`URL для 301:\n${parsed.urls301.join('\n')}`);
+                        }
+                    }
                     if (task.templateIndex !== '' && task.templateIndex !== undefined) {
                         const tpl = templates[task.templateIndex];
                         if (tpl && hreflangCode) {
@@ -5562,17 +5840,19 @@ https://{{alternateDomain}}/
 
             // Определяем провайдер
             const cloudProvider = GM_getValue('cloudProvider', 'google');
-            // v4.5.3: Используем дефолтный URL из CONFIG
-            const googleScriptUrl = GM_getValue('googleAppsScriptUrl', CONFIG.cloud.defaultGoogleScriptUrl);
+            // v4.5.5: Поддержка нескольких URL
+            const googleScriptUrlsRaw = GM_getValue('googleAppsScriptUrl', CONFIG.cloud.defaultGoogleScriptUrl);
+            const googleScriptUrls = googleScriptUrlsRaw.split('\n').map(u => u.trim()).filter(u => u && u.startsWith('http'));
             const powerAutomateUrl = GM_getValue('powerAutomateUrl', '');
+            const parallelMode = GM_getValue('cloudParallelMode', false);
 
             // Проверяем настроен ли URL для выбранного провайдера
-            if (cloudProvider === 'google' && !googleScriptUrl) {
-                showToast(' Не настроен Google Apps Script URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
+            if (cloudProvider === 'google' && googleScriptUrls.length === 0) {
+                showToast('⚠️ Не настроен Google Apps Script URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
                 return;
             }
             if (cloudProvider === 'microsoft' && !powerAutomateUrl) {
-                showToast(' Не настроен Power Automate URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
+                showToast('⚠️ Не настроен Power Automate URL\n\nНастройте его в 🔧 Настройки → вкладка "Облако"');
                 return;
             }
 
@@ -5587,7 +5867,13 @@ https://{{alternateDomain}}/
             this.logMessage('☁️ Создание ТЗ в облаке...');
             this.logMessage('📊 Провайдер: ' + providerName);
             this.logMessage('📋 Задач: ' + tasksToProcess.length);
-            this.logMessage('🔗 URL: ' + (cloudProvider === 'google' ? googleScriptUrl.substring(0, 60) + '...' : powerAutomateUrl.substring(0, 60) + '...'));
+            
+            // v4.5.5: Показываем количество endpoints
+            if (cloudProvider === 'google' && googleScriptUrls.length > 1) {
+                this.logMessage(`🔀 Endpoints: ${googleScriptUrls.length} (${parallelMode ? 'параллельно' : 'round-robin'})`);
+            } else {
+                this.logMessage('🔗 URL: ' + (cloudProvider === 'google' ? googleScriptUrls[0].substring(0, 50) + '...' : powerAutomateUrl.substring(0, 50) + '...'));
+            }
 
             // Логируем каждую задачу
             tasksToProcess.forEach((task, i) => {
@@ -5604,98 +5890,141 @@ https://{{alternateDomain}}/
                 const sheetData = this.prepareCloudData(tasksToProcess);
                 this.logMessage('📦 Размер данных: ' + JSON.stringify(sheetData).length + ' байт');
 
-                // v4.5.5: Batch-обработка для больших объёмов (порции по 5 задач для надёжности)
-                const BATCH_SIZE = 5;
-                let response;
+                // v4.5.5: Load Balancing для Google Sheets
+                let urlIndex = 0; // Round-robin счётчик
                 
-                // v4.5.5: Retry-функция с детальным логированием
-                const sendWithRetry = async (data, attempt = 1, maxAttempts = 3) => {
-                    try {
-                        const startTime = Date.now();
-                        const result = await this.sendToGoogleSheets(googleScriptUrl, data);
-                        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-                        this.logMessage(`   ✓ Успешно за ${elapsed}с`, 'success');
-                        return result;
-                    } catch (err) {
-                        this.logMessage(`   ⚠️ Попытка ${attempt}/${maxAttempts}: ${err.message}`, 'warning');
-                        if (attempt < maxAttempts) {
-                            const delay = attempt * 2000; // 2с, 4с, 6с
-                            this.logMessage(`   ⏳ Повтор через ${delay/1000}с...`);
-                            await new Promise(r => setTimeout(r, delay));
-                            return sendWithRetry(data, attempt + 1, maxAttempts);
+                // v4.5.5: Функция отправки с failover
+                const sendWithFailover = async (data, preferredUrlIndex = 0) => {
+                    const startTime = Date.now();
+                    let lastError = null;
+                    
+                    // Пробуем все URL начиная с preferredUrlIndex
+                    for (let attempt = 0; attempt < googleScriptUrls.length; attempt++) {
+                        const currentUrlIndex = (preferredUrlIndex + attempt) % googleScriptUrls.length;
+                        const url = googleScriptUrls[currentUrlIndex];
+                        
+                        try {
+                            const result = await this.sendToGoogleSheets(url, data);
+                            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                            
+                            if (googleScriptUrls.length > 1) {
+                                this.logMessage(`   ✓ [#${currentUrlIndex + 1}] Успешно за ${elapsed}с`, 'success');
+                            } else {
+                                this.logMessage(`   ✓ Успешно за ${elapsed}с`, 'success');
+                            }
+                            return result;
+                        } catch (err) {
+                            lastError = err;
+                            if (googleScriptUrls.length > 1 && attempt < googleScriptUrls.length - 1) {
+                                this.logMessage(`   ⚠️ [#${currentUrlIndex + 1}] ${err.message} → пробуем #${((currentUrlIndex + 1) % googleScriptUrls.length) + 1}`, 'warning');
+                            }
                         }
-                        throw err;
+                    }
+                    
+                    // Все URL не сработали - retry с задержкой
+                    this.logMessage(`   ⚠️ Все endpoints не ответили, повтор через 3с...`, 'warning');
+                    await new Promise(r => setTimeout(r, 3000));
+                    
+                    // Последняя попытка на первый URL
+                    try {
+                        const result = await this.sendToGoogleSheets(googleScriptUrls[0], data);
+                        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                        this.logMessage(`   ✓ Успешно за ${elapsed}с (retry)`, 'success');
+                        return result;
+                    } catch (finalErr) {
+                        throw lastError || finalErr;
                     }
                 };
+                
+                let response;
                 
                 if (cloudProvider === 'google') {
                     // v4.5.5: Показываем прогресс-бар всегда
                     this.showProgress(true);
+                    this.updateProgress(0, sheetData.length, 'Подготовка...');
                     
-                    if (sheetData.length > BATCH_SIZE) {
-                        // Разбиваем на порции
-                        const batches = [];
-                        for (let i = 0; i < sheetData.length; i += BATCH_SIZE) {
-                            batches.push(sheetData.slice(i, i + BATCH_SIZE));
-                        }
+                    const allResponses = [];
+                    const startTime = Date.now();
+                    
+                    if (parallelMode && googleScriptUrls.length > 1) {
+                        // ⚡ Параллельная отправка - группируем задачи по URL
+                        this.logMessage(`⚡ Параллельный режим: ${googleScriptUrls.length} потоков`);
                         
-                        this.logMessage('📦 Разбиваем на ' + batches.length + ' порций по ' + BATCH_SIZE + ' задач...');
-                        this.updateProgress(0, batches.length);
+                        // Распределяем задачи по URL
+                        const taskGroups = googleScriptUrls.map(() => []);
+                        sheetData.forEach((task, i) => {
+                            taskGroups[i % googleScriptUrls.length].push(task);
+                        });
                         
-                        const allResponses = [];
-                        const startTime = Date.now();
+                        // Отправляем параллельно
+                        const promises = taskGroups.map((group, urlIdx) => {
+                            if (group.length === 0) return Promise.resolve(null);
+                            this.logMessage(`   📤 Поток #${urlIdx + 1}: ${group.length} задач`);
+                            return this.sendToGoogleSheets(googleScriptUrls[urlIdx], group)
+                                .then(res => {
+                                    this.logMessage(`   ✓ Поток #${urlIdx + 1} завершён`, 'success');
+                                    return res;
+                                })
+                                .catch(err => {
+                                    this.logMessage(`   ❌ Поток #${urlIdx + 1}: ${err.message}`, 'error');
+                                    return null;
+                                });
+                        });
                         
-                        for (let i = 0; i < batches.length; i++) {
+                        const results = await Promise.all(promises);
+                        allResponses.push(...results.filter(r => r && r.success));
+                        
+                        this.updateProgress(sheetData.length, sheetData.length, '100%');
+                        
+                    } else {
+                        // 🔄 Последовательная отправка с round-robin
+                        for (let i = 0; i < sheetData.length; i++) {
                             this.logMessage('');
-                            this.logMessage('📤 Порция ' + (i + 1) + '/' + batches.length + ' (' + batches[i].length + ' задач)...');
-                            this.updateProgress(i, batches.length);
+                            this.logMessage(`📤 Задача ${i + 1}/${sheetData.length}...`);
+                            this.updateProgress(i, sheetData.length);
                             
                             try {
-                                const batchResponse = await sendWithRetry(batches[i]);
+                                // Round-robin: каждая задача на следующий URL
+                                const batchResponse = await sendWithFailover([sheetData[i]], urlIndex);
                                 allResponses.push(batchResponse);
-                            } catch (batchErr) {
-                                this.logMessage(`   ❌ Порция ${i + 1} не отправлена: ${batchErr.message}`, 'error');
-                                // Продолжаем с остальными порциями
+                                urlIndex = (urlIndex + 1) % googleScriptUrls.length;
+                            } catch (err) {
+                                this.logMessage(`   ❌ Задача ${i + 1} не отправлена: ${err.message}`, 'error');
                             }
                             
-                            this.updateProgress(i + 1, batches.length);
+                            this.updateProgress(i + 1, sheetData.length);
                             
-                            // Пауза между порциями чтобы не перегружать сервер
-                            if (i < batches.length - 1) {
-                                this.logMessage('   ⏸️ Пауза 1с...');
-                                await new Promise(r => setTimeout(r, 1000));
+                            // Пауза между задачами (меньше если много URL)
+                            if (i < sheetData.length - 1) {
+                                const delay = googleScriptUrls.length > 1 ? 500 : 1000;
+                                await new Promise(r => setTimeout(r, delay));
                             }
                         }
-                        
-                        const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-                        this.logMessage('');
-                        this.logMessage(`⏱️ Общее время: ${totalTime}с`);
-                        
-                        if (allResponses.length === 0) {
-                            this.showProgress(false);
-                            throw new Error('Все порции не удалось отправить');
-                        }
-                        
-                        // Объединяем результаты и убираем дубликаты URL
-                        const allSheets = allResponses.flatMap(r => r.sheets || [{ url: r.sheetUrl, name: r.sheetName }]);
-                        const uniqueUrls = [...new Set(allSheets.map(s => s.url).filter(u => u))];
-                        const uniqueSheets = uniqueUrls.map(url => allSheets.find(s => s.url === url));
-                        
-                        response = {
-                            success: allResponses.length > 0,
-                            sheetUrl: allResponses[0]?.sheetUrl,
-                            sheetName: allResponses[0]?.sheetName,
-                            sheets: uniqueSheets
-                        };
-                        
-                        this.logMessage('');
-                        this.logMessage(`📊 Итого: ${allResponses.length}/${batches.length} порций отправлено`);
-                    } else {
-                        // Малое количество задач - одна отправка
-                        this.updateProgress(0, 1, 'Отправка...');
-                        response = await sendWithRetry(sheetData);
-                        this.updateProgress(1, 1, '100%');
                     }
+                    
+                    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                    this.logMessage('');
+                    this.logMessage(`⏱️ Общее время: ${totalTime}с`);
+                    
+                    if (allResponses.length === 0) {
+                        this.showProgress(false);
+                        throw new Error('Все задачи не удалось отправить');
+                    }
+                    
+                    // Объединяем результаты и убираем дубликаты URL
+                    const allSheets = allResponses.flatMap(r => r.sheets || [{ url: r.sheetUrl, name: r.sheetName }]);
+                    const uniqueUrls = [...new Set(allSheets.map(s => s.url).filter(u => u))];
+                    const uniqueSheets = uniqueUrls.map(url => allSheets.find(s => s.url === url));
+                    
+                    response = {
+                        success: allResponses.length > 0,
+                        sheetUrl: allResponses[0]?.sheetUrl,
+                        sheetName: allResponses[0]?.sheetName,
+                        sheets: uniqueSheets
+                    };
+                    
+                    this.logMessage('');
+                    this.logMessage(`📊 Итого: ${allResponses.length}/${sheetData.length} задач отправлено`);
                 } else {
                     response = await this.sendToPowerAutomate(powerAutomateUrl, sheetData);
                 }
@@ -6014,12 +6343,25 @@ https://{{alternateDomain}}/
 
                     // Заменяем переменные
                     tzContent = tzContent
+                        .replace(/\{\{department\}\}/g, task.department || '')
                         .replace(/\{\{domain\}\}/g, domain)
                         .replace(/\{\{oldSub\}\}/g, oldSub)
                         .replace(/\{\{newSub\}\}/g, newSub)
                         .replace(/\{\{alternateDomain\}\}/g, alternateDomain || oldSub)
                         .replace(/\{\{hreflangCode\}\}/g, hreflangCode)
+                        // v4.5.6: Новые переменные для редиректов
+                        .replace(/\{\{toUrl\}\}/g, task.toUrl || '')
+                        // v4.6.10: oldUrl с разделением по типам
+                        .replace(/\{\{oldUrl\}\}/g, formatOldUrlForDisplay(task.oldUrl))
+                        .replace(/\{\{oldUrl404\}\}/g, parseOldUrls(task.oldUrl).urls404.join('\n'))
+                        .replace(/\{\{oldUrl301\}\}/g, parseOldUrls(task.oldUrl).urls301.join('\n'))
+                        .replace(/\{\{oldUrlFormatted\}\}/g, formatOldUrlForTZ(task.oldUrl))
                         .replace(/\{\{subtasks\}\}/g, subtasksList);
+
+                    // v4.6.16: Автоматически добавляем отдел в начало ТЗ если заполнен
+                    if (task.department && !taskType.tzTemplate?.includes('{{department}}')) {
+                        tzContent = `Отдел: ${task.department}\n\n${tzContent}`;
+                    }
 
                     // Добавляем подзадачи в конец если они не в шаблоне
                     if (subtasksList && !taskType.tzTemplate?.includes('{{subtasks}}')) {
@@ -6036,6 +6378,18 @@ https://{{alternateDomain}}/
                     if (oldSub) lines.push(`Старый поддомен:\t${oldSub}`);
                     if (newSub) lines.push(`Новый поддомен:\t${newSub}`);
                     if (alternateDomain) lines.push(`Домен подмены:\t${alternateDomain}`);
+                    // v4.5.6: Новые поля
+                    if (task.toUrl) lines.push(`URL дропа:\t${task.toUrl}`);
+                    // v4.6.10: oldUrl с разделением по типам
+                    if (task.oldUrl) {
+                        const parsed = parseOldUrls(task.oldUrl);
+                        if (parsed.urls404.length > 0) {
+                            lines.push(`URL для 404:\n${parsed.urls404.join('\n')}`);
+                        }
+                        if (parsed.urls301.length > 0) {
+                            lines.push(`URL для 301:\n${parsed.urls301.join('\n')}`);
+                        }
+                    }
                     if (task.templateIndex !== '' && task.templateIndex !== undefined) {
                         const tpl = templates[task.templateIndex];
                         if (tpl && hreflangCode) {
@@ -6310,6 +6664,8 @@ https://{{alternateDomain}}/
                 redirect404: false,
                 newSub: '',
                 alternateDomain: '',  // v4.5.0: домен подмены
+                toUrl: '',  // v4.5.7: URL дропа (301/404)
+                oldUrl: '',  // v4.5.7: URL для 404 (несколько)
                 templateIndex: '',  // v4.5.0: пустое по умолчанию (—)
                 priority: '',
                 cms: '',
@@ -6461,7 +6817,9 @@ https://{{alternateDomain}}/
                 'domain': 'Домен',
                 'oldSub': 'Старый поддомен',
                 'newSub': 'Новый поддомен',
-                'alternateDomain': 'Домен подмены',
+                'toUrl': 'URL дропа (301/404)',
+                'oldUrl': 'oldURL',
+                'alternateDomain': 'Подмена',
                 'hreflangCode': 'hreflang',
                 'priority': 'Приоритет',
                 'cms': 'CMS',
@@ -6485,7 +6843,9 @@ https://{{alternateDomain}}/
                         <div>${mark('domain', 'Домен')}</div>
                         <div>${mark('oldSub', 'Старый поддомен')}</div>
                         <div>${mark('newSub', 'Новый поддомен')}</div>
-                        <div>${mark('alternateDomain', 'Домен подмены')}</div>
+                        <div>${mark('toUrl', 'URL дропа (301/404)')}</div>
+                        <div>${mark('oldUrl', 'oldURL')}</div>
+                        <div>${mark('alternateDomain', 'Подмена')}</div>
                         <div>${mark('hreflangCode', 'hreflang')}</div>
                         <div>${mark('priority', 'Приоритет')}</div>
                         <div>${mark('cms', 'CMS')}</div>
@@ -6523,6 +6883,7 @@ https://{{alternateDomain}}/
                     const varName = m.replace(/\{\{|\}\}/g, '');
                     requiredVars.add(varName);
                 });
+                if(DEBUG) console.log('renderTaskRow requiredVars для', task.taskName, ':', [...requiredVars]);
             }
 
             // Функция проверки пустого обязательного поля
@@ -6555,6 +6916,12 @@ https://{{alternateDomain}}/
             const taskNameClass = '';  // taskName не подсвечиваем - это поле выбора типа
             const departmentClass = isRequiredEmpty('department', task.department) ? 'input-required-empty' : '';
             const alternateDomainClass = isRequiredEmpty('alternateDomain', task.alternateDomain) ? 'input-required-empty' : '';
+            // v4.6.0: Классы для новых полей
+            const toUrlClass = isRequiredEmpty('toUrl', task.toUrl) ? 'input-required-empty' : '';
+            const oldUrlClass = isRequiredEmpty('oldUrl', task.oldUrl) ? 'input-required-empty' : '';
+            if(DEBUG && (toUrlClass || oldUrlClass || alternateDomainClass)) {
+                console.log('Подсветка полей:', { toUrlClass, oldUrlClass, alternateDomainClass, requiredVars: [...requiredVars] });
+            }
             const hreflangClass = isRequiredEmpty('hreflangCode', task.templateIndex) ? 'input-required-empty' : '';
             const priorityClass = isRequiredEmpty('priority', task.priority) ? 'input-required-empty' : '';
             const cmsClass = isRequiredEmpty('cms', task.cms) ? 'input-required-empty' : '';
@@ -6607,6 +6974,12 @@ https://{{alternateDomain}}/
                     <div class="cell-newsub" style="position: relative;">
                         <input type="text" value="${task.newSub}" data-field="newSub" class="${newSubInputClass}" title="${newSubTitle}" autocomplete="off" />
                         <div class="autocomplete-list" id="newSub-autocomplete-${task.id}"></div>
+                    </div>
+                    <div class="cell-tourl">
+                        <input type="text" value="${task.toUrl || ''}" data-field="toUrl" class="${toUrlClass}" placeholder="URL дропа (301/404)" autocomplete="off" />
+                    </div>
+                    <div class="cell-oldurl">
+                        ${this.getOldUrlCountBadge(task.oldUrl)}
                     </div>
                     <div class="cell-altdomain">
                         <input type="text" value="${task.alternateDomain || ''}" data-field="alternateDomain" class="${alternateDomainClass}" placeholder="" autocomplete="off" />
@@ -6670,6 +7043,39 @@ https://{{alternateDomain}}/
                 .filter(d => db[d].status === 'active')
                 .map(d => `<option value="${d}">`)
                 .join('');
+        }
+
+        // v4.6.11: Счётчик oldUrl с типами
+        getOldUrlCountBadge(oldUrlField) {
+            const parsed = parseOldUrls(oldUrlField);
+            const total = parsed.all.length;
+            
+            if (total === 0) {
+                return '<span class="oldurl-count empty" data-action="manage-oldurl" data-tooltip="Нет URL&#10;Нажмите чтобы добавить" title="Управление oldURL">📜 0</span>';
+            }
+            
+            // v4.6.12: Детальный tooltip со списком URL
+            const lines = [];
+            if (parsed.urls404.length > 0) {
+                lines.push(`🔴 404 (${parsed.urls404.length}):`);
+                parsed.urls404.slice(0, 5).forEach(url => {
+                    const shortUrl = url.length > 35 ? url.substring(0, 35) + '...' : url;
+                    lines.push(`  ${shortUrl}`);
+                });
+                if (parsed.urls404.length > 5) lines.push(`  ... и ещё ${parsed.urls404.length - 5}`);
+            }
+            if (parsed.urls301.length > 0) {
+                if (lines.length > 0) lines.push('');
+                lines.push(`🔵 301 (${parsed.urls301.length}):`);
+                parsed.urls301.slice(0, 5).forEach(url => {
+                    const shortUrl = url.length > 35 ? url.substring(0, 35) + '...' : url;
+                    lines.push(`  ${shortUrl}`);
+                });
+                if (parsed.urls301.length > 5) lines.push(`  ... и ещё ${parsed.urls301.length - 5}`);
+            }
+            const tooltip = lines.join('&#10;');
+            
+            return `<span class="oldurl-count" data-action="manage-oldurl" data-tooltip="${tooltip}" title="Управление oldURL">📜 ${total}</span>`;
         }
 
         getSubtasksTooltip(task) {
@@ -6912,7 +7318,7 @@ https://{{alternateDomain}}/
                 });
             });
 
-            table.querySelectorAll('input[data-field], select[data-field]').forEach(el => {
+            table.querySelectorAll('input[data-field], select[data-field], textarea[data-field]').forEach(el => {
                 // Предотвращаем всплытие событий к Asana
                 el.addEventListener('keydown', (e) => e.stopPropagation());
                 el.addEventListener('keyup', (e) => e.stopPropagation());
@@ -7236,11 +7642,16 @@ https://{{alternateDomain}}/
                     this.removeTask(taskId);
                     break;
                 case 'manage-domains':
-                    this.openUnifiedDomainsModal();
+                    // v4.5.7: Передаём taskId для выбора домена в массовом режиме
+                    this.openUnifiedDomainsModal(taskId);
                     break;
                 case 'manage-history':
                     // v4.3.5: Открываем модалку управления поддоменами для конкретной задачи
                     this.openMassSubdomainManagerModal(taskId);
+                    break;
+                case 'manage-oldurl':
+                    // v4.5.9: Открываем модалку управления oldURL
+                    this.openOldUrlManagerModal(taskId);
                     break;
                 case 'manage-templates':
                     this.openTemplateManager();
@@ -7286,6 +7697,639 @@ https://{{alternateDomain}}/
 
             // v4.3.7: Передаём taskId для обновления правильного поля
             this.openSubdomainManagerModal('oldSub', taskId);
+        }
+
+        // v4.5.9: Модалка для управления oldURL
+        openOldUrlManagerModal(taskId) {
+            console.log('openOldUrlManagerModal called with taskId:', taskId);
+            const task = this.tasks.find(t => t.id === taskId);
+            console.log('Found task for oldUrl modal:', task);
+            if (!task) {
+                showToast('Задача не найдена');
+                return;
+            }
+
+            // v4.6.9: Домен не обязателен - можно работать без базы
+            const db = loadSitesDatabase();
+            let siteKey = null;
+            let site = null;
+            let oldUrls = [];
+
+            if (task.domain) {
+                const normalized = normalizeDomain(task.domain);
+                for (const d in db) {
+                    if (db[d].status === 'active' && normalizeDomain(d) === normalized) {
+                        siteKey = d;
+                        site = db[d];
+                        break;
+                    }
+                }
+                if (site) {
+                    oldUrls = site.oldUrls || [];
+                }
+            }
+
+            // v4.6.13: Также показываем URL из поля задачи (импортированные)
+            const taskUrls = parseOldUrls(task.oldUrl);
+            const taskUrlsSet = new Set(taskUrls.all);
+            const dbUrlsSet = new Set(oldUrls.map(u => u.url));
+            
+            // URL из задачи, которых нет в базе - добавляем с пометкой
+            const importedUrls = [];
+            taskUrls.all.forEach((url, i) => {
+                if (!dbUrlsSet.has(url)) {
+                    // Определяем тип из формата url|type
+                    const lines = (task.oldUrl || '').split('\n');
+                    let action = '404';
+                    for (const line of lines) {
+                        const parts = line.split('|');
+                        if (parts[0].trim() === url && parts[1]) {
+                            action = parts[1].trim();
+                            break;
+                        }
+                    }
+                    importedUrls.push({
+                        url: url,
+                        action: action,
+                        usedDate: 'импорт',
+                        isImported: true
+                    });
+                }
+            });
+
+            const that = this;
+
+            const modalHtml = `
+                <div class="oldurl-manager-modal">
+                    <style>
+                        .oldurl-manager-modal {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(0,0,0,0.5);
+                            z-index: 10000002;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .oum-content {
+                            background: white;
+                            border-radius: 12px;
+                            width: 600px;
+                            max-height: 95vh;
+                            display: flex;
+                            flex-direction: column;
+                            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                            position: relative;
+                        }
+                        .oum-header {
+                            background: linear-gradient(135deg, #4CAF50, #45a049);
+                            color: white;
+                            padding: 16px 20px;
+                            border-radius: 12px 12px 0 0;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+                        .oum-header h3 { margin: 0; font-size: 16px; }
+                        .oum-close {
+                            background: none;
+                            border: none;
+                            color: white;
+                            font-size: 24px;
+                            cursor: pointer;
+                            padding: 0;
+                            line-height: 1;
+                        }
+                        .oum-body {
+                            padding: 20px;
+                            overflow-y: auto;
+                            max-height: 60vh;
+                        }
+                        .oum-section {
+                            margin-bottom: 20px;
+                        }
+                        .oum-section-title {
+                            font-weight: 600;
+                            margin-bottom: 10px;
+                            color: #333;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        }
+                        .oum-add-row {
+                            display: flex;
+                            gap: 8px;
+                            margin-bottom: 15px;
+                        }
+                        .oum-add-row input {
+                            flex: 1;
+                            padding: 10px 12px;
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            color: #333;
+                            background: #fff;
+                        }
+                        .oum-add-row select {
+                            padding: 10px;
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            color: #333;
+                            background: #fff;
+                        }
+                        .oum-add-row button {
+                            padding: 10px 16px;
+                            background: #4CAF50;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 500;
+                        }
+                        .oum-add-row button:hover { background: #45a049; }
+                        .oum-list {
+                            border: 1px solid #e0e0e0;
+                            border-radius: 8px;
+                            overflow: hidden;
+                        }
+                        .oum-list-item {
+                            display: flex;
+                            align-items: center;
+                            padding: 12px;
+                            border-bottom: 1px solid #e0e0e0;
+                            gap: 10px;
+                            background: #fff;
+                        }
+                        .oum-list-item:last-child { border-bottom: none; }
+                        .oum-list-item:hover { background: #f5f5f5; }
+                        .oum-list-checkbox {
+                            width: 18px;
+                            height: 18px;
+                            cursor: pointer;
+                        }
+                        .oum-list-url {
+                            flex: 1;
+                            font-family: monospace;
+                            font-size: 13px;
+                            word-break: break-all;
+                            color: #333;
+                        }
+                        .oum-list-meta {
+                            display: flex;
+                            gap: 8px;
+                            align-items: center;
+                            color: #666;
+                        }
+                        .oum-badge {
+                            padding: 3px 8px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: 600;
+                        }
+                        .oum-badge-301 { background: #e3f2fd; color: #1565c0; }
+                        .oum-badge-404 { background: #ffebee; color: #c62828; }
+                        .oum-list-use {
+                            padding: 6px 12px;
+                            background: #e3f2fd;
+                            color: #1976d2;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                        }
+                        .oum-list-use:hover { background: #bbdefb; }
+                        .oum-list-delete {
+                            padding: 6px 10px;
+                            background: none;
+                            border: none;
+                            cursor: pointer;
+                            opacity: 0.5;
+                        }
+                        .oum-list-delete:hover { opacity: 1; }
+                        .oum-list-remove-from-task, .oum-list-save-to-db {
+                            padding: 4px 8px;
+                            background: none;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 12px;
+                            transition: all 0.2s;
+                        }
+                        .oum-list-remove-from-task:hover {
+                            background: #ffebee;
+                            border-color: #ef5350;
+                        }
+                        .oum-list-save-to-db:hover {
+                            background: #e3f2fd;
+                            border-color: #2196f3;
+                        }
+                        .oum-list-empty {
+                            padding: 20px;
+                            text-align: center;
+                            color: #999;
+                        }
+                        .oum-footer {
+                            padding: 15px 20px;
+                            border-top: 1px solid #e0e0e0;
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 10px;
+                        }
+                        .oum-footer-left {
+                            display: flex;
+                            gap: 10px;
+                            align-items: center;
+                        }
+                        .oum-footer-right {
+                            display: flex;
+                            gap: 10px;
+                        }
+                        .oum-btn {
+                            padding: 10px 20px;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 500;
+                        }
+                        .oum-btn-primary {
+                            background: #4CAF50;
+                            color: white;
+                        }
+                        .oum-btn-primary:hover { background: #45a049; }
+                        .oum-btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+                        .oum-btn-close {
+                            background: #e0e0e0;
+                            color: #333;
+                        }
+                        .oum-btn-close:hover { background: #d0d0d0; }
+                        .oum-select-all-label {
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            color: #333;
+                            font-size: 13px;
+                            cursor: pointer;
+                        }
+                    </style>
+                    <div class="oum-content">
+                        <div class="oum-header">
+                            <h3>📋 oldURL${task.domain ? ': ' + task.domain : ' (без привязки к домену)'}</h3>
+                            <button class="oum-close" id="oum-close-x">×</button>
+                        </div>
+                        <div class="oum-body">
+                            <div class="oum-section">
+                                <div class="oum-section-title">📦 История oldURL${!siteKey ? ' <span style="color: #999; font-size: 11px;">(укажите домен для синхронизации с базой)</span>' : ''}</div>
+                                <div class="oum-add-row">
+                                    <input type="text" id="oum-new-url" placeholder="https://site.com/page/" />
+                                    <select id="oum-new-action">
+                                        <option value="404">404</option>
+                                        <option value="301">301</option>
+                                    </select>
+                                    <button id="oum-add-btn">+ Добавить</button>
+                                </div>
+                                ${importedUrls.length > 0 ? `
+                                <div class="oum-section-subtitle" style="font-size: 12px; color: #FF9800; margin: 10px 0 5px; font-weight: 600;">📋 Выбрано для задачи (${importedUrls.length}):</div>
+                                <div class="oum-list" id="oum-imported-list">
+                                    ${importedUrls.map((u, i) => `
+                                        <div class="oum-list-item oum-imported" data-index="imported-${i}" style="background: #fff8e1;">
+                                            <input type="checkbox" class="oum-list-checkbox" data-url="${u.url}" data-action="${u.action || '404'}" checked disabled />
+                                            <div class="oum-list-url">${u.url}</div>
+                                            <div class="oum-list-meta">
+                                                <span class="oum-badge oum-badge-${u.action || '404'}">${u.action || '404'}</span>
+                                                <span style="color: #FF9800;">✓ выбран</span>
+                                            </div>
+                                            <button class="oum-list-remove-from-task" data-url="${u.url}" title="Убрать из задачи">❌</button>
+                                            ${siteKey ? `<button class="oum-list-save-to-db" data-url="${u.url}" data-action="${u.action || '404'}" title="Сохранить в базу">💾</button>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ` : ''}
+                                ${oldUrls.length > 0 ? `<div class="oum-section-subtitle" style="font-size: 12px; color: #666; margin: 10px 0 5px; font-weight: 600;">📚 История из базы (${oldUrls.length}):</div>` : ''}
+                                <div class="oum-list" id="oum-list">
+                                    ${oldUrls.length === 0 && importedUrls.length === 0 ?
+                                        `<div class="oum-list-empty">${siteKey ? 'История пуста' : 'Укажите домен чтобы увидеть историю из базы'}</div>` :
+                                        oldUrls.map((u, i) => `
+                                            <div class="oum-list-item ${taskUrlsSet.has(u.url) ? 'oum-selected' : ''}" data-index="${i}" ${taskUrlsSet.has(u.url) ? 'style="background: #e8f5e9;"' : ''}>
+                                                <input type="checkbox" class="oum-list-checkbox" data-url="${u.url}" data-action="${u.action || '404'}" ${taskUrlsSet.has(u.url) ? 'checked disabled' : ''} />
+                                                <div class="oum-list-url">${u.url}</div>
+                                                <div class="oum-list-meta">
+                                                    <span class="oum-badge oum-badge-${u.action || '404'}">${u.action || '404'}</span>
+                                                    ${u.usedDate ? `<span>${u.usedDate}</span>` : ''}
+                                                    ${taskUrlsSet.has(u.url) ? '<span style="color: #4CAF50;">✓</span>' : ''}
+                                                </div>
+                                                ${!taskUrlsSet.has(u.url) ? `<button class="oum-list-use" data-url="${u.url}" data-action="${u.action || '404'}">Выбрать</button>` : ''}
+                                                <button class="oum-list-delete" data-index="${i}">🗑️</button>
+                                            </div>
+                                        `).join('')
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="oum-footer">
+                            <div class="oum-footer-left">
+                                ${oldUrls.length > 0 ? `
+                                    <label class="oum-select-all-label">
+                                        <input type="checkbox" id="oum-select-all" />
+                                        Выбрать все
+                                    </label>
+                                ` : ''}
+                            </div>
+                            <div class="oum-footer-right">
+                                <button class="oum-btn oum-btn-primary" id="oum-use-selected-btn" disabled>Добавить отмеченные (0)</button>
+                                <button class="oum-btn oum-btn-close" id="oum-close-btn">Закрыть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const container = document.createElement('div');
+            container.innerHTML = modalHtml;
+            this.shadowRoot.appendChild(container.firstElementChild);
+
+            const modal = this.shadowRoot.querySelector('.oldurl-manager-modal');
+
+            // Закрытие
+            const closeModal = () => modal.remove();
+            modal.querySelector('#oum-close-x').addEventListener('click', closeModal);
+            modal.querySelector('#oum-close-btn').addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+            // Предотвращаем всплытие событий
+            modal.querySelectorAll('input, select, button').forEach(el => {
+                el.addEventListener('keydown', e => e.stopPropagation());
+                el.addEventListener('keyup', e => e.stopPropagation());
+                el.addEventListener('keypress', e => e.stopPropagation());
+            });
+
+            // Добавить новый URL
+            modal.querySelector('#oum-add-btn').addEventListener('click', () => {
+                const urlInput = modal.querySelector('#oum-new-url');
+                const actionSelect = modal.querySelector('#oum-new-action');
+                const url = urlInput.value.trim();
+                const action = actionSelect.value;
+
+                if (!url) {
+                    showToast('Введите URL');
+                    return;
+                }
+
+                // v4.6.11: Если домен указан, но не в базе - создаём его
+                const db = loadSitesDatabase();
+                let actualSiteKey = siteKey;
+                
+                if (!actualSiteKey && task.domain) {
+                    // Создаём сайт в базе
+                    const newDomain = task.domain;
+                    db[newDomain] = {
+                        department: task.department || '',
+                        cms: '',
+                        hreflangTemplate: '',
+                        hasAMP: false,
+                        dmcaDefault: false,
+                        status: 'active',
+                        oldSubdomains: [],
+                        currentSubdomain: '',
+                        oldUrls: [],
+                        notes: ''
+                    };
+                    actualSiteKey = newDomain;
+                    showToast(`Домен ${newDomain} добавлен в базу`);
+                }
+
+                if (actualSiteKey) {
+                    if (!db[actualSiteKey].oldUrls) db[actualSiteKey].oldUrls = [];
+                    
+                    // Проверяем дубликат
+                    const exists = db[actualSiteKey].oldUrls.find(u => u.url === url);
+                    if (exists) {
+                        showToast('Такой URL уже есть в истории');
+                        return;
+                    }
+
+                    db[actualSiteKey].oldUrls.unshift({
+                        url: url,
+                        action: action,
+                        usedDate: new Date().toLocaleDateString('ru-RU')
+                    });
+                    saveSitesDatabase(db);
+                    showToast(`URL добавлен (${action})`);
+                    closeModal();
+                    this.openOldUrlManagerModal(taskId); // Перезагружаем модалку
+                } else {
+                    // Без домена - добавляем напрямую в поле задачи с типом
+                    const task = that.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        const urlWithType = `${url}|${action}`;
+                        const current = task.oldUrl || '';
+                        task.oldUrl = current ? current + '\n' + urlWithType : urlWithType;
+                        that.renderTasksTable();
+                        showToast(`URL добавлен в задачу (${action})`);
+                    }
+                    closeModal();
+                }
+            });
+
+            // Удалить URL
+            modal.querySelectorAll('.oum-list-delete').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!siteKey) {
+                        showToast('Нельзя удалить - домен не указан');
+                        return;
+                    }
+                    const index = parseInt(btn.dataset.index);
+                    const db = loadSitesDatabase();
+                    if (db[siteKey] && db[siteKey].oldUrls) {
+                        db[siteKey].oldUrls.splice(index, 1);
+                        saveSitesDatabase(db);
+                        showToast('URL удалён');
+                        closeModal();
+                        this.openOldUrlManagerModal(taskId);
+                    }
+                });
+            });
+
+            // v4.6.13: Убрать URL из задачи (импортированные)
+            modal.querySelectorAll('.oum-list-remove-from-task').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const urlToRemove = btn.dataset.url;
+                    const task = that.tasks.find(t => t.id === taskId);
+                    if (task && task.oldUrl) {
+                        // Удаляем строку с этим URL
+                        const lines = task.oldUrl.split('\n').filter(line => {
+                            const parts = line.split('|');
+                            return parts[0].trim() !== urlToRemove;
+                        });
+                        task.oldUrl = lines.join('\n');
+                        that.renderTasksTable();
+                        showToast('URL убран из задачи');
+                        closeModal();
+                        this.openOldUrlManagerModal(taskId);
+                    }
+                });
+            });
+
+            // v4.6.13: Сохранить импортированный URL в базу
+            modal.querySelectorAll('.oum-list-save-to-db').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.dataset.url;
+                    const action = btn.dataset.action || '404';
+                    const db = loadSitesDatabase();
+                    
+                    if (siteKey && db[siteKey]) {
+                        if (!db[siteKey].oldUrls) db[siteKey].oldUrls = [];
+                        
+                        // Проверяем дубликат
+                        const exists = db[siteKey].oldUrls.find(u => u.url === url);
+                        if (exists) {
+                            showToast('URL уже есть в базе');
+                            return;
+                        }
+                        
+                        db[siteKey].oldUrls.unshift({
+                            url: url,
+                            action: action,
+                            usedDate: new Date().toLocaleDateString('ru-RU')
+                        });
+                        saveSitesDatabase(db);
+                        showToast('URL сохранён в базу');
+                        closeModal();
+                        this.openOldUrlManagerModal(taskId);
+                    }
+                });
+            });
+
+            // Выбрать URL - добавить в поле oldUrl задачи с типом
+            modal.querySelectorAll('.oum-list-use').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.dataset.url;
+                    const action = btn.dataset.action || '404';
+                    const task = that.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        // v4.6.15: Проверяем дубликаты
+                        const existingUrls = parseOldUrls(task.oldUrl).all;
+                        if (existingUrls.includes(url)) {
+                            showToast('Этот URL уже добавлен');
+                            closeModal();
+                            return;
+                        }
+                        
+                        const urlWithType = `${url}|${action}`;
+                        if (task.oldUrl) {
+                            task.oldUrl = task.oldUrl + '\n' + urlWithType;
+                        } else {
+                            task.oldUrl = urlWithType;
+                        }
+                        that.renderTasksTable();
+                        showToast(`Добавлен (${action}): ${url}`);
+                    }
+                    closeModal();
+                });
+            });
+
+            // v4.6.1: Обработчики для множественного выбора
+            const checkboxes = modal.querySelectorAll('.oum-list-checkbox');
+            const useSelectedBtn = modal.querySelector('#oum-use-selected-btn');
+            const selectAllCheckbox = modal.querySelector('#oum-select-all');
+            console.log('Checkboxes found:', checkboxes.length, 'useSelectedBtn:', useSelectedBtn, 'selectAllCheckbox:', selectAllCheckbox);
+
+            // Функция обновления состояния кнопки
+            const updateSelectedCount = () => {
+                // v4.6.15: Считаем только активные (не disabled) чекбоксы
+                const checked = modal.querySelectorAll('.oum-list-checkbox:checked:not(:disabled)');
+                const enabledCheckboxes = modal.querySelectorAll('.oum-list-checkbox:not(:disabled)');
+                const count = checked.length;
+                console.log('updateSelectedCount: count =', count, 'useSelectedBtn =', useSelectedBtn);
+                if (useSelectedBtn) {
+                    useSelectedBtn.textContent = `Добавить отмеченные (${count})`;
+                    useSelectedBtn.disabled = count === 0;
+                    console.log('Button disabled:', useSelectedBtn.disabled);
+                }
+                // Обновляем состояние "Выбрать все"
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = count === enabledCheckboxes.length && count > 0;
+                    selectAllCheckbox.indeterminate = count > 0 && count < enabledCheckboxes.length;
+                }
+            };
+
+            // Обработчик для каждого чекбокса
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    console.log('Checkbox changed:', cb.dataset.url, 'checked:', cb.checked);
+                    updateSelectedCount();
+                });
+            });
+
+            // Обработчик "Выбрать все"
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', () => {
+                    const isChecked = selectAllCheckbox.checked;
+                    // v4.6.15: Только активные (не disabled) чекбоксы
+                    const enabledCheckboxes = modal.querySelectorAll('.oum-list-checkbox:not(:disabled)');
+                    enabledCheckboxes.forEach(cb => cb.checked = isChecked);
+                    updateSelectedCount();
+                });
+            }
+
+            // Обработчик кнопки "Добавить отмеченные"
+            console.log('useSelectedBtn element:', useSelectedBtn);
+            if (useSelectedBtn) {
+                console.log('Registering click handler for useSelectedBtn');
+                useSelectedBtn.addEventListener('click', () => {
+                    // v4.6.15: Пропускаем disabled чекбоксы (уже выбранные)
+                    const checked = modal.querySelectorAll('.oum-list-checkbox:checked:not(:disabled)');
+                    console.log('Добавить отмеченные clicked, checked:', checked.length, 'taskId:', taskId);
+                    if (checked.length === 0) {
+                        showToast('Все выбранные URL уже добавлены');
+                        return;
+                    }
+
+                    const task = that.tasks.find(t => t.id === taskId);
+                    console.log('Found task:', task);
+                    if (task) {
+                        // v4.6.15: Проверяем дубликаты
+                        const existingUrls = parseOldUrls(task.oldUrl).all;
+                        const existingSet = new Set(existingUrls);
+                        
+                        const newUrlsToAdd = [];
+                        Array.from(checked).forEach(cb => {
+                            const url = cb.dataset.url;
+                            const action = cb.dataset.action || '404';
+                            if (!existingSet.has(url)) {
+                                newUrlsToAdd.push(`${url}|${action}`);
+                                existingSet.add(url); // Предотвращаем дубли в текущем batch
+                            }
+                        });
+                        
+                        if (newUrlsToAdd.length === 0) {
+                            showToast('Все выбранные URL уже добавлены');
+                            closeModal();
+                            return;
+                        }
+                        
+                        const newUrls = newUrlsToAdd.join('\n');
+                        if (task.oldUrl) {
+                            task.oldUrl = task.oldUrl + '\n' + newUrls;
+                        } else {
+                            task.oldUrl = newUrls;
+                        }
+                        console.log('Updated task.oldUrl:', task.oldUrl);
+                        that.renderTasksTable();
+                        showToast(`Добавлено ${newUrlsToAdd.length} URL`);
+                    } else {
+                        console.error('Task not found! taskId:', taskId, 'tasks:', that.tasks);
+                    }
+                    closeModal();
+                });
+            } else {
+                console.error('useSelectedBtn NOT FOUND!');
+            }
+
+            // v4.6.4: Инициализируем состояние кнопки
+            updateSelectedCount();
         }
 
         openTaskSubtasksModal(taskId) {
@@ -7636,6 +8680,8 @@ ${hreflangCode}
                                 redirect301: redirect301,
                                 redirect404: redirect404,
                                 newSub: getVal('newSub') || '',
+                                toUrl: getVal('toUrl') || '',
+                                oldUrl: getVal('oldUrl') || '',
                                 alternateDomain: getVal('alternateDomain') || '',
                                 templateIndex: templateIndex,
                                 priority: getVal('priority') || '',
@@ -7867,8 +8913,8 @@ ${hreflangCode}
             // === ЛИСТ 2: Задачи ===
             const tasksSheet = wb.addWorksheet('Задачи');
 
-            const taskHeaders = ['№', 'taskName', 'department', 'domain', 'oldSub', 'redirect', 'newSub', 'alternateDomain', 'hreflang', 'priority', 'cms', 'dmca', 'amp', 'assignee', 'pingRocket', 'notes'];
-            const taskHints = ['1,2,3...', 'Тип задачи', 'Отдел', 'example.com', 'old.example.com', '301/404/-', 'new.example.com', 'alt-domain.com', 'RU/AZ/KZ', 'High/Medium/Low', 'CMS', 'true/false', 'true/false', 'Имя', 'true/false', 'Примечания'];
+            const taskHeaders = ['№', 'taskName', 'department', 'domain', 'oldSub', 'redirect', 'newSub', 'toUrl', 'oldUrl', 'alternateDomain', 'hreflang', 'priority', 'cms', 'dmca', 'amp', 'assignee', 'pingRocket', 'notes'];
+            const taskHints = ['1,2,3...', 'Тип задачи', 'Отдел', 'example.com', 'old.example.com', '301/404/-', 'new.example.com', 'URL дропа (301/404)', 'URL для 404', 'alt-domain.com', 'RU/AZ/KZ', 'High/Medium/Low', 'CMS', 'true/false', 'true/false', 'Имя', 'true/false', 'Примечания'];
 
             const taskHeaderRow = tasksSheet.addRow(taskHeaders);
             taskHeaderRow.eachCell(cell => { Object.assign(cell, headerStyle); });
@@ -7889,6 +8935,8 @@ ${hreflangCode}
                         t.oldSub || '',
                         redirect,
                         t.newSub || '',
+                        t.toUrl || '',
+                        t.oldUrl || '',
                         t.alternateDomain || '',
                         hreflang,
                         t.priority || '',
@@ -7904,7 +8952,7 @@ ${hreflangCode}
 
             tasksSheet.columns = [
                 { width: 5 }, { width: 22 }, { width: 12 }, { width: 22 }, { width: 22 }, { width: 10 },
-                { width: 22 }, { width: 20 }, { width: 20 }, { width: 12 }, { width: 12 }, { width: 8 },
+                { width: 22 }, { width: 25 }, { width: 30 }, { width: 20 }, { width: 20 }, { width: 12 }, { width: 12 }, { width: 8 },
                 { width: 8 }, { width: 18 }, { width: 10 }, { width: 25 }
             ];
 
@@ -7929,28 +8977,28 @@ ${hreflangCode}
             tasksSheet.dataValidations.add('F3:F1000', {
                 type: 'list', allowBlank: true, formulae: [redirectFormula]
             });
-            // I: hreflang
-            tasksSheet.dataValidations.add('I3:I1000', {
+            // K: hreflang (было I, добавили toUrl=H, oldUrl=I, alternateDomain=J)
+            tasksSheet.dataValidations.add('K3:K1000', {
                 type: 'list', allowBlank: true, formulae: [hreflangFormula]
             });
-            // J: priority
-            tasksSheet.dataValidations.add('J3:J1000', {
+            // L: priority
+            tasksSheet.dataValidations.add('L3:L1000', {
                 type: 'list', allowBlank: true, formulae: [priorityFormula]
             });
-            // K: cms
-            tasksSheet.dataValidations.add('K3:K1000', {
+            // M: cms
+            tasksSheet.dataValidations.add('M3:M1000', {
                 type: 'list', allowBlank: true, formulae: [cmsFormula]
             });
-            // L: dmca
-            tasksSheet.dataValidations.add('L3:L1000', {
+            // N: dmca
+            tasksSheet.dataValidations.add('N3:N1000', {
                 type: 'list', allowBlank: true, formulae: [boolFormula]
             });
-            // M: amp
-            tasksSheet.dataValidations.add('M3:M1000', {
-                type: 'list', allowBlank: true, formulae: [boolFormula]
-            });
-            // O: pingRocket
+            // O: amp
             tasksSheet.dataValidations.add('O3:O1000', {
+                type: 'list', allowBlank: true, formulae: [boolFormula]
+            });
+            // Q: pingRocket
+            tasksSheet.dataValidations.add('Q3:Q1000', {
                 type: 'list', allowBlank: true, formulae: [boolFormula]
             });
 
@@ -8206,6 +9254,11 @@ ${hreflangCode}
             root.getElementById('open-history-modal').addEventListener('click', () => this.openAutomationHistoryModal());
             root.getElementById('manage-domains-unified').addEventListener('click', () => this.openUnifiedDomainsModal());
             root.getElementById('manage-history').addEventListener('click', () => this.openSubdomainManagerModal('oldSub'));
+            // v4.5.7: Обработчик для oldUrl
+            root.getElementById('manage-oldurl').addEventListener('click', () => {
+                showToast('Введите URL для 404 по одному на строку', 'info', 3000);
+                root.getElementById('oldUrl').focus();
+            });
             root.getElementById('clear-selected-domains').addEventListener('click', () => this.clearSelectedDomains());
 
             // Проверка www при изменении поддоменов
@@ -8242,6 +9295,16 @@ ${hreflangCode}
                 this.checkWwwConsistency();
             });
             root.getElementById('newSub').addEventListener('keydown', (e) => e.stopPropagation());
+
+            // v4.5.8: stopPropagation для новых полей
+            ['toUrl', 'oldUrl', 'alternateDomain'].forEach(fieldId => {
+                const el = root.getElementById(fieldId);
+                if (el) {
+                    el.addEventListener('keydown', (e) => e.stopPropagation());
+                    el.addEventListener('keyup', (e) => e.stopPropagation());
+                    el.addEventListener('keypress', (e) => e.stopPropagation());
+                }
+            });
         }
 
         handleDomainInput(e) {
@@ -8283,7 +9346,7 @@ ${hreflangCode}
                 // Если пусто - items остаётся пустым, автокомплит не покажется
                 if(DEBUG) console.log('Domain search results:', items.length, 'query:', value);
             } else if (type === 'oldSub') {
-                // Поиск по oldSubdomains текущего домена
+                // v4.5.7: Поиск по oldSubdomains + currentSubdomain текущего домена
                 const db = loadSitesDatabase();
                 const normalized = normalizeDomain(currentDomain);
                 if(DEBUG) {
@@ -8300,56 +9363,44 @@ ${hreflangCode}
                     if (db[d].status === 'active' && dbNormalized === normalized) {
                         site = db[d];
                         foundKey = d;
-                        if(DEBUG) console.log('✓ Найден сайт:', d, 'oldSubdomains:', site.oldSubdomains);
+                        if(DEBUG) console.log('✓ Найден сайт:', d, 'oldSubdomains:', site.oldSubdomains, 'currentSubdomain:', site.currentSubdomain);
                         break;
                     }
                 }
                 if (!site && DEBUG) console.log('✗ Сайт НЕ найден в базе');
-                // v4.3.6: Показываем только при вводе текста
-                if (site && site.oldSubdomains && value.length > 0) {
-                    items = site.oldSubdomains
-                        .filter(s => s.url.toLowerCase().includes(value.toLowerCase()))
-                        .map(s => ({
-                            value: s.url,
-                            meta: '[' + (s.action || '301') + ']' + (s.usedDate ? ' • ' + s.usedDate : ''),
-                            data: s
-                        }));
+                // v4.5.7: Показываем oldSubdomains + currentSubdomain
+                if (site && value.length > 0) {
+                    // Сначала добавляем currentSubdomain (текущий, который отключаем)
+                    if (site.currentSubdomain && site.currentSubdomain.toLowerCase().includes(value.toLowerCase())) {
+                        items.push({
+                            value: site.currentSubdomain,
+                            meta: '[ТЕКУЩИЙ] → будет отключён',
+                            data: { url: site.currentSubdomain, action: '404', isCurrent: true }
+                        });
+                    }
+                    // Затем oldSubdomains
+                    if (site.oldSubdomains) {
+                        const oldItems = site.oldSubdomains
+                            .filter(s => s.url.toLowerCase().includes(value.toLowerCase()))
+                            .map(s => ({
+                                value: s.url,
+                                meta: '[' + (s.action || '404') + ']' + (s.usedDate ? ' • ' + s.usedDate : ''),
+                                data: s
+                            }));
+                        items.push(...oldItems);
+                    }
                     if(DEBUG) console.log('oldSub items (после фильтра):', items.length, items);
                 }
                 if(DEBUG) console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
             } else if (type === 'newSub') {
-                // Показываем currentSubdomain текущего домена
-                const db = loadSitesDatabase();
-                const normalized = normalizeDomain(currentDomain);
+                // v4.5.7: Новый поддомен - НЕ показываем автокомплит (вводится вручную)
+                // Поле для НОВОГО поддомена, которого ещё нет в базе
                 if(DEBUG) {
                     console.log('━━━━━━━ newSub DEBUG ━━━━━━━');
-                    console.log('currentDomain (из поля):', currentDomain);
-                    console.log('normalized:', normalized);
+                    console.log('newSub: автокомплит отключён - вводится вручную');
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
                 }
-                let site = null;
-                for (const d in db) {
-                    if (db[d].status === 'active' && normalizeDomain(d) === normalized) {
-                        site = db[d];
-                        if(DEBUG) console.log('✓ Найден сайт:', d, 'currentSubdomain:', site.currentSubdomain);
-                        break;
-                    }
-                }
-                if (!site && DEBUG) console.log('✗ Сайт НЕ найден в базе');
-                // v4.3.6: Показываем только при вводе текста
-                if (site && site.currentSubdomain && value.length > 0) {
-                    const current = site.currentSubdomain;
-                    if (current.toLowerCase().includes(value.toLowerCase())) {
-                        items = [{
-                            value: current,
-                            meta: 'Текущий поддомен',
-                            data: { url: current }
-                        }];
-                    }
-                    if(DEBUG) console.log('newSub items:', items);
-                } else {
-                    if(DEBUG) console.log('newSub: пусто или currentSubdomain не задан');
-                }
-                if(DEBUG) console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                // items остаётся пустым - автокомплит не показывается
             }
 
             if (items.length > 0) {
@@ -8716,6 +9767,10 @@ ${hreflangCode}
                 department: root.getElementById('department').value,
                 oldSub: root.getElementById('oldSub').value.trim(),
                 newSub: root.getElementById('newSub').value.trim(),
+                // v4.5.7: Новые поля
+                toUrl: root.getElementById('toUrl')?.value.trim() || '',
+                oldUrl: root.getElementById('oldUrl')?.value.trim() || '',
+                alternateDomain: root.getElementById('alternateDomain')?.value.trim() || '',
                 templateIndex: root.getElementById('templateSelect').value,
                 priority: root.getElementById('priority').value,
                 cms: root.getElementById('cms').value,
@@ -10446,7 +11501,7 @@ ID: ${taskData.gid}
                                     <button class="sm-btn sm-btn-save" id="sm-save-current">💾 Сохранить</button>
                                 </div>
                                 <div style="font-size: 12px; color: #666; margin-top: 4px;">
-                                    Этот поддомен будет предлагаться в поле "Новый поддомен"
+                                    Этот поддомен будет предлагаться в поле "Старый поддомен" (т.к. его отключаем)
                                 </div>
                             </div>
 
@@ -10456,8 +11511,8 @@ ID: ${taskData.gid}
                                 <div class="sm-input-row">
                                     <input type="text" class="sm-input" id="sm-old-input" placeholder="old.example.com">
                                     <select class="sm-select" id="sm-old-action">
-                                        <option value="301">301</option>
                                         <option value="404">404</option>
+                                        <option value="301">301</option>
                                     </select>
                                     <button class="sm-btn sm-btn-add" id="sm-add-old">➕ Добавить</button>
                                 </div>
@@ -10468,10 +11523,10 @@ ID: ${taskData.gid}
                                             <div class="sm-list-item" data-index="${i}">
                                                 <div class="sm-list-url">${s.url}</div>
                                                 <div class="sm-list-meta">
-                                                    <span class="sm-badge sm-badge-${s.action || '301'}">${s.action || '301'}</span>
+                                                    <span class="sm-badge sm-badge-${s.action || '404'}">${s.action || '404'}</span>
                                                     ${s.usedDate ? `<span>${s.usedDate}</span>` : ''}
                                                 </div>
-                                                <button class="sm-list-use" data-url="${s.url}" data-redirect="${s.action || '301'}">Выбрать</button>
+                                                <button class="sm-list-use" data-url="${s.url}" data-redirect="${s.action || '404'}">Выбрать</button>
                                                 <button class="sm-list-delete" data-index="${i}">🗑️</button>
                                             </div>
                                         `).join('')
@@ -10517,19 +11572,53 @@ ID: ${taskData.gid}
                 const newCurrent = modal.querySelector('#sm-current-input').value.trim();
                 const db = loadSitesDatabase();
                 if (db[siteKey]) {
+                    // v4.5.7: При смене текущего - старый переносится в историю со статусом 404
+                    const oldCurrent = db[siteKey].currentSubdomain;
+                    if (oldCurrent && oldCurrent !== newCurrent) {
+                        if (!db[siteKey].oldSubdomains) db[siteKey].oldSubdomains = [];
+                        // Проверяем что ещё нет в истории
+                        const exists = db[siteKey].oldSubdomains.find(s => normalizeDomain(s.url) === normalizeDomain(oldCurrent));
+                        if (!exists) {
+                            db[siteKey].oldSubdomains.unshift({
+                                url: oldCurrent,
+                                action: '404',
+                                usedDate: new Date().toLocaleDateString('ru-RU')
+                            });
+                        }
+                    }
+                    
                     db[siteKey].currentSubdomain = newCurrent;
                     saveSitesDatabase(db);
-                    showToast('Текущий поддомен сохранён!');
+                    showToast('Текущий поддомен сохранён!' + (oldCurrent && oldCurrent !== newCurrent ? ' Старый перенесён в историю.' : ''));
 
-                    // v4.3.7: Обновляем поле newSub в зависимости от режима
+                    // Обновляем UI истории
+                    const oldSubs = db[siteKey].oldSubdomains || [];
+                    const listHtml = oldSubs.length === 0 ?
+                        '<div class="sm-list-empty">История пуста</div>' :
+                        oldSubs.map((s, i) => `
+                            <div class="sm-list-item" data-index="${i}">
+                                <div class="sm-list-url">${s.url}</div>
+                                <div class="sm-list-meta">
+                                    <span class="sm-badge sm-badge-${s.action || '404'}">${s.action || '404'}</span>
+                                    ${s.usedDate ? `<span>${s.usedDate}</span>` : ''}
+                                </div>
+                                <button class="sm-list-delete" data-index="${i}">🗑️</button>
+                            </div>
+                        `).join('');
+                    modal.querySelector('#sm-old-list').innerHTML = listHtml;
+
+                    // v4.3.7: Обновляем поле oldSub (не newSub!) в зависимости от режима
                     if (targetTaskId) {
                         const task = that.tasks.find(t => t.id === targetTaskId);
                         if (task) {
-                            task.newSub = newCurrent;
+                            task.oldSub = oldCurrent || newCurrent;
                             that.renderTasksTable();
                         }
                     } else {
-                        that.shadowRoot.getElementById('newSub').value = newCurrent;
+                        const oldSubInput = that.shadowRoot.getElementById('oldSub');
+                        if (oldSubInput && oldCurrent) {
+                            oldSubInput.value = oldCurrent;
+                        }
                     }
                 }
             });
@@ -10588,11 +11677,13 @@ ID: ${taskData.gid}
             modal.querySelectorAll('.sm-list-use').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const url = btn.dataset.url;
-                    const redirectType = btn.dataset.redirect || '301';
+                    const redirectType = btn.dataset.redirect || '404';
+                    if(DEBUG) console.log('sm-list-use clicked:', url, 'redirect:', redirectType, 'targetTaskId:', targetTaskId);
 
                     // v4.3.7: Если это массовый режим - обновляем задачу в массиве
                     if (targetTaskId) {
                         const task = that.tasks.find(t => t.id === targetTaskId);
+                        if(DEBUG) console.log('Массовый режим, задача:', task);
                         if (task) {
                             task.oldSub = url;
                             // v4.3.7: Устанавливаем флаги редиректа
@@ -10602,10 +11693,16 @@ ID: ${taskData.gid}
                         }
                     } else {
                         // Одиночный режим
-                        that.shadowRoot.getElementById('oldSub').value = url;
+                        const oldSubInput = that.shadowRoot.getElementById('oldSub');
+                        if(DEBUG) console.log('Одиночный режим, oldSubInput:', oldSubInput);
+                        if (oldSubInput) {
+                            oldSubInput.value = url;
+                        }
                         // v4.3.7: Устанавливаем флаги редиректа
-                        that.shadowRoot.getElementById('redirect301').checked = (redirectType === '301');
-                        that.shadowRoot.getElementById('redirect404').checked = (redirectType === '404');
+                        const r301 = that.shadowRoot.getElementById('redirect301');
+                        const r404 = that.shadowRoot.getElementById('redirect404');
+                        if (r301) r301.checked = (redirectType === '301');
+                        if (r404) r404.checked = (redirectType === '404');
                     }
                     closeModal();
                 });
@@ -10616,19 +11713,79 @@ ID: ${taskData.gid}
             this.openSitesModal();
         }
 
-        openUnifiedDomainsModal() {
-            this.openSitesModal();
+        openUnifiedDomainsModal(taskId = null) {
+            this.openSitesModal(taskId);
         }
 
-        openSitesModal() {
-            const modal = new SitesModal(this.shadowRoot, () => {
-                // Обновляем отображение после изменений в базе
-                const domain = this.shadowRoot.getElementById('domain')?.value.trim();
-                if (domain) {
-                    this.showOldSubHistory();
-                    this.autofillFromSite(domain);
+        openSitesModal(taskId = null) {
+            const that = this;
+            if(DEBUG) console.log('openSitesModal taskId:', taskId);
+            const modal = new SitesModal(
+                this.shadowRoot,
+                // onUpdate callback
+                () => {
+                    const domain = that.shadowRoot.getElementById('domain')?.value.trim();
+                    if (domain) {
+                        that.showOldSubHistory();
+                        that.autofillFromSite(domain);
+                    }
+                },
+                // v4.5.7: onSelect callback - выбор сайта из базы
+                (domain, site) => {
+                    if(DEBUG) console.log('onSelect вызван:', domain, 'taskId:', taskId, 'site:', site);
+                    
+                    // v4.5.9: Если выбрано только одно поле
+                    if (site && site._fieldOnly) {
+                        const fieldName = site._fieldOnly;
+                        const fieldValue = site[fieldName];
+                        if(DEBUG) console.log('Выбор отдельного поля:', fieldName, '=', fieldValue);
+                        
+                        if (taskId) {
+                            const task = that.tasks.find(t => t.id === taskId);
+                            if (task) {
+                                task[fieldName] = fieldValue;
+                                that.renderTasksTable();
+                            }
+                        } else {
+                            // Одиночный режим
+                            const input = that.shadowRoot.getElementById(fieldName);
+                            if (input) input.value = fieldValue;
+                        }
+                        showToast(`${fieldName}: ${fieldValue.substring(0, 30)}...`);
+                        return; // Не закрываем модалку
+                    }
+                    
+                    // v4.5.7: Если массовый режим - обновляем задачу
+                    if (taskId) {
+                        const task = that.tasks.find(t => t.id === taskId);
+                        if(DEBUG) console.log('Найдена задача:', task);
+                        if (task) {
+                            task.domain = domain;
+                            // Автозаполнение из сайта
+                            if (site && site.department) task.department = site.department;
+                            if (site && site.cms) task.cms = site.cms;
+                            if (site && site.hreflangTemplate !== undefined) task.templateIndex = site.hreflangTemplate;
+                            if (site && site.hasAMP) task.amp = true;
+                            if (site && site.dmcaDefault) task.dmca = true;
+                            // v4.5.9: Новые поля
+                            if (site && site.alternateDomain) task.alternateDomain = site.alternateDomain;
+                            if (site && site.toUrl) task.toUrl = site.toUrl;
+                            if (site && site.oldUrl) task.oldUrl = site.oldUrl;
+                            that.renderTasksTable();
+                        }
+                    } else {
+                        // Одиночный режим - заполняем поле домена
+                        const domainInput = that.shadowRoot.getElementById('domain');
+                        if(DEBUG) console.log('Одиночный режим, domainInput:', domainInput);
+                        if (domainInput) {
+                            domainInput.value = domain;
+                            that.autofillFromSite(domain);
+                            that.checkWwwConsistency();
+                        }
+                    }
+                    showToast(`Выбран: ${domain}`);
                 }
-            });
+            );
             modal.show();
         }
 
@@ -10664,6 +11821,20 @@ ID: ${taskData.gid}
             if (site.dmcaDefault) {
                 const dmcaCheck = this.shadowRoot.getElementById('dmca');
                 if (dmcaCheck) dmcaCheck.checked = true;
+            }
+
+            // v4.6.0: Автозаполнение новых полей
+            if (site.alternateDomain) {
+                const altInput = this.shadowRoot.getElementById('alternateDomain');
+                if (altInput) altInput.value = site.alternateDomain;
+            }
+            if (site.toUrl) {
+                const toUrlInput = this.shadowRoot.getElementById('toUrl');
+                if (toUrlInput) toUrlInput.value = site.toUrl;
+            }
+            if (site.oldUrl) {
+                const oldUrlInput = this.shadowRoot.getElementById('oldUrl');
+                if (oldUrlInput) oldUrlInput.value = site.oldUrl;
             }
         }
 
@@ -11291,9 +12462,10 @@ ID: ${taskData.gid}
 
     // ===== КЛАСС ДЛЯ УПРАВЛЕНИЯ ЕДИНОЙ БАЗОЙ САЙТОВ =====
     class SitesModal {
-        constructor(parentShadowRoot, onUpdate) {
+        constructor(parentShadowRoot, onUpdate, onSelect = null) {
             this.parentShadowRoot = parentShadowRoot;
             this.onUpdate = onUpdate;
+            this.onSelect = onSelect; // v4.5.7: Callback при выборе сайта
             this.modalHost = null;
             this.shadowRoot = null;
             this.currentTab = 'main';
@@ -11359,7 +12531,14 @@ ID: ${taskData.gid}
                 .sites-badge-301 { background: #e8f5e9; color: #2e7d32; }
                 .sites-badge-404 { background: #ffebee; color: #c62828; }
                 .sites-action-btn { background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 16px; }
+                .sites-action-btn-select { background: #e8f5e9; color: #2e7d32; font-weight: bold; }
+                .sites-action-btn-select:hover { background: #c8e6c9; }
+                .sites-action-btn-mini { background: #e3f2fd; color: #1976d2; font-size: 12px; padding: 2px 6px; margin-left: 4px; }
+                .sites-action-btn-mini:hover { background: #bbdefb; }
                 .sites-action-btn:hover { background: #e0e0e0; }
+                .sites-cell-value { display: flex; align-items: center; gap: 2px; }
+                .sites-cell-text { font-size: 12px; color: #555; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .sites-cell-empty { color: #bbb; font-size: 12px; }
                 .sites-subdomains-count { background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #333; }
                 .sites-empty { text-align: center; padding: 40px; color: #666; }
                 .sites-form { background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
@@ -11438,6 +12617,12 @@ ID: ${taskData.gid}
                                     <div class="sites-form-group sites-form-checkbox"><label><input type="checkbox" id="form-amp" /> AMP</label><label style="margin-left:12px;"><input type="checkbox" id="form-dmca" /> DMCA</label></div>
                                     <div class="sites-form-group"><label class="sites-form-label">Статус</label><select class="sites-form-select" id="form-status"><option value="active">Активный</option><option value="inactive">Неактивный</option></select></div>
                                 </div>
+                                <!-- v4.5.9: Новые поля -->
+                                <div class="sites-form-grid" style="margin-top: 12px;">
+                                    <div class="sites-form-group"><label class="sites-form-label">Домен подмены</label><input type="text" class="sites-form-input" id="form-alternate" placeholder="alternate-domain.com" /></div>
+                                    <div class="sites-form-group"><label class="sites-form-label">URL дропа (301/404)</label><input type="text" class="sites-form-input" id="form-tourl" placeholder="https://drop.example.com/" /></div>
+                                </div>
+                                <div class="sites-form-group" style="margin-top: 12px;"><label class="sites-form-label">URL для 404 (по строкам)</label><textarea class="sites-form-input" id="form-oldurl" placeholder="https://site.com/page1/&#10;https://site.com/page2/" rows="2" style="resize: vertical;"></textarea></div>
                                 <div class="sites-form-group" style="margin-top: 12px;"><label class="sites-form-label">Заметки</label><input type="text" class="sites-form-input" id="form-notes" placeholder="Опционально" /></div>
                                 <div class="sites-form-buttons">
                                     <button class="sites-toolbar-btn sites-toolbar-btn-primary" id="form-save">💾 Сохранить</button>
@@ -11573,19 +12758,35 @@ ID: ${taskData.gid}
                 return;
             }
 
-            let html = '<table class="sites-table"><thead><tr><th>Домен</th><th>Отдел</th><th>CMS</th><th>Флаги</th><th>Шаблон</th><th>Поддом.</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="sites-table"><thead><tr><th>Домен</th><th>Отдел</th><th>Подмена</th><th>URL дропа (301/404)</th><th>oldURL</th><th>Флаги</th><th>Действия</th></tr></thead><tbody>';
             sites.forEach(site => {
                 const flags = [];
                 if (site.hasAMP) flags.push('<span class="sites-badge sites-badge-amp">AMP</span>');
                 if (site.dmcaDefault) flags.push('<span class="sites-badge sites-badge-dmca">DMCA</span>');
                 const tpl = site.hreflangTemplate ? (loadTemplates()[site.hreflangTemplate]?.name || site.hreflangTemplate) : '—';
+                // v4.5.9: Отображаем новые поля с кнопками выбора
+                const altDomain = site.alternateDomain || '';
+                const toUrlVal = site.toUrl || '';
+                const oldUrlVal = site.oldUrl || '';
                 html += `<tr>
-                    <td style="font-weight:500;">${site.domain}</td>
+                    <td style="font-weight:500;">
+                        ${site.domain}
+                        ${this.onSelect ? `<button class="sites-action-btn sites-action-btn-select" data-action="select" data-domain="${site.domain}" title="Выбрать всё">✓</button>` : ''}
+                    </td>
                     <td>${site.department ? `<span class="sites-badge sites-badge-dept">${site.department}</span>` : '—'}</td>
-                    <td>${site.cms ? `<span class="sites-badge sites-badge-cms">${site.cms}</span>` : '—'}</td>
+                    <td class="sites-cell-value">
+                        ${altDomain ? `<span class="sites-cell-text" title="${altDomain}">${altDomain.length > 15 ? altDomain.substring(0,15)+'...' : altDomain}</span>` : '<span class="sites-cell-empty">—</span>'}
+                        ${altDomain && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-alt" data-domain="${site.domain}" data-value="${altDomain}" title="Вставить в Подмена">⬇</button>` : ''}
+                    </td>
+                    <td class="sites-cell-value">
+                        ${toUrlVal ? `<span class="sites-cell-text" title="${toUrlVal}">${toUrlVal.length > 15 ? toUrlVal.substring(0,15)+'...' : toUrlVal}</span>` : '<span class="sites-cell-empty">—</span>'}
+                        ${toUrlVal && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-tourl" data-domain="${site.domain}" data-value="${toUrlVal}" title="Вставить в URL дропа (301/404)">⬇</button>` : ''}
+                    </td>
+                    <td class="sites-cell-value">
+                        ${oldUrlVal ? `<span class="sites-cell-text" title="${oldUrlVal}">${oldUrlVal.length > 15 ? oldUrlVal.substring(0,15)+'...' : oldUrlVal}</span>` : '<span class="sites-cell-empty">—</span>'}
+                        ${oldUrlVal && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-oldurl" data-domain="${site.domain}" data-value="${oldUrlVal}" title="Вставить в URL 404">⬇</button>` : ''}
+                    </td>
                     <td>${flags.join(' ') || '—'}</td>
-                    <td>${tpl}</td>
-                    <td><span class="sites-subdomains-count">${site.oldSubdomains?.length || 0}</span></td>
                     <td>
                         <button class="sites-action-btn" data-action="edit" data-domain="${site.domain}" title="Редактировать">✏️</button>
                         <button class="sites-action-btn" data-action="delete" data-domain="${site.domain}" title="Удалить">🗑️</button>
@@ -11598,9 +12799,29 @@ ID: ${taskData.gid}
             container.querySelectorAll('.sites-action-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const domain = btn.dataset.domain;  // v4.3.7: btn вместо e.target
-                    if (btn.dataset.action === 'edit') this.showForm(domain);
-                    if (btn.dataset.action === 'delete') this.deleteSite(domain);
+                    const domain = btn.dataset.domain;
+                    const action = btn.dataset.action;
+                    const value = btn.dataset.value;
+                    
+                    if (action === 'edit') this.showForm(domain);
+                    if (action === 'delete') this.deleteSite(domain);
+                    // v4.5.7: Выбор всего сайта
+                    if (action === 'select' && this.onSelect) {
+                        const db = loadSitesDatabase();
+                        const site = db[domain];
+                        this.onSelect(domain, site);
+                        this.close();
+                    }
+                    // v4.5.9: Выбор отдельных полей
+                    if (action === 'select-alt' && this.onSelect) {
+                        this.onSelect(domain, { _fieldOnly: 'alternateDomain', alternateDomain: value });
+                    }
+                    if (action === 'select-tourl' && this.onSelect) {
+                        this.onSelect(domain, { _fieldOnly: 'toUrl', toUrl: value });
+                    }
+                    if (action === 'select-oldurl' && this.onSelect) {
+                        this.onSelect(domain, { _fieldOnly: 'oldUrl', oldUrl: value });
+                    }
                 });
             });
         }
@@ -11741,6 +12962,10 @@ ID: ${taskData.gid}
                 this.shadowRoot.getElementById('form-amp').checked = site.hasAMP || false;
                 this.shadowRoot.getElementById('form-dmca').checked = site.dmcaDefault || false;
                 this.shadowRoot.getElementById('form-status').value = site.status || 'active';
+                // v4.5.9: Новые поля
+                this.shadowRoot.getElementById('form-alternate').value = site.alternateDomain || '';
+                this.shadowRoot.getElementById('form-tourl').value = site.toUrl || '';
+                this.shadowRoot.getElementById('form-oldurl').value = site.oldUrl || '';
                 this.shadowRoot.getElementById('form-notes').value = site.notes || '';
             } else {
                 this.shadowRoot.getElementById('form-domain').value = '';
@@ -11751,6 +12976,10 @@ ID: ${taskData.gid}
                 this.shadowRoot.getElementById('form-amp').checked = false;
                 this.shadowRoot.getElementById('form-dmca').checked = false;
                 this.shadowRoot.getElementById('form-status').value = 'active';
+                // v4.5.9: Новые поля
+                this.shadowRoot.getElementById('form-alternate').value = '';
+                this.shadowRoot.getElementById('form-tourl').value = '';
+                this.shadowRoot.getElementById('form-oldurl').value = '';
                 this.shadowRoot.getElementById('form-notes').value = '';
             }
         }
@@ -11771,6 +13000,10 @@ ID: ${taskData.gid}
                 hasAMP: this.shadowRoot.getElementById('form-amp').checked,
                 dmcaDefault: this.shadowRoot.getElementById('form-dmca').checked,
                 status: this.shadowRoot.getElementById('form-status').value,
+                // v4.5.9: Новые поля
+                alternateDomain: this.shadowRoot.getElementById('form-alternate').value.trim(),
+                toUrl: this.shadowRoot.getElementById('form-tourl').value.trim(),
+                oldUrl: this.shadowRoot.getElementById('form-oldurl').value.trim(),
                 notes: this.shadowRoot.getElementById('form-notes').value
             };
 
@@ -12894,10 +14127,17 @@ ID: ${taskData.gid}
                         <p class="cloud-hint">Настройте Google Apps Script для сохранения ТЗ</p>
 
                         <div class="cloud-field">
-                            <label>Google Apps Script URL:</label>
-                            <input type="text" id="google-script-url" class="cloud-input"
-                                   value="${googleScriptUrl}"
-                                   placeholder="https://script.google.com/macros/s/.../exec" />
+                            <label>Google Apps Script URLs (по одному на строку):</label>
+                            <textarea id="google-script-urls" class="cloud-textarea" rows="4"
+                                   placeholder="https://script.google.com/macros/s/.../exec&#10;https://script.google.com/macros/s/.../exec">${googleScriptUrl}</textarea>
+                            <small style="color:#888;">💡 Несколько URL = распределение нагрузки (round-robin + failover)</small>
+                        </div>
+
+                        <div class="cloud-field" style="margin-top: 12px;">
+                            <label class="cloud-checkbox-label">
+                                <input type="checkbox" id="cloud-parallel-mode" ${GM_getValue('cloudParallelMode', false) ? 'checked' : ''} />
+                                ⚡ Параллельная отправка (быстрее, но больше нагрузка)
+                            </label>
                         </div>
 
                         <div class="cloud-instructions">
@@ -12909,6 +14149,7 @@ ID: ${taskData.gid}
                                 <li>Deploy → New deployment → Web app</li>
                                 <li>Execute as: Me, Who has access: Anyone</li>
                                 <li>Скопируйте URL и вставьте выше</li>
+                                <li><b>Для балансировки:</b> создайте 2-5 копий скрипта</li>
                             </ol>
                             <p style="margin-top:8px;color:#666;">💡 Каждая генерация создаёт новую таблицу в Google Drive</p>
                         </div>
@@ -12928,12 +14169,26 @@ ID: ${taskData.gid}
 
                     <div class="cloud-test">
                         <button id="test-cloud-connection" class="btn-test">🔗 Проверить подключение</button>
-                        <span id="cloud-test-result"></span>
+                        <div id="cloud-test-result" class="cloud-test-result"></div>
                     </div>
                 </div>
 
                 <style>
                     .cloud-settings { padding: 16px; }
+                    .cloud-test {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        margin-top: 16px;
+                    }
+                    .cloud-test-result {
+                        font-size: 12px;
+                        padding: 8px;
+                        background: #f5f5f5;
+                        border-radius: 6px;
+                        min-height: 20px;
+                    }
+                    .cloud-test-result:empty { display: none; }
                     .cloud-section {
                         background: #f9f9f9;
                         border-radius: 8px;
@@ -12964,6 +14219,29 @@ ID: ${taskData.gid}
                         color: #fff;
                     }
                     .cloud-input:focus { outline: none; border-color: #4CAF50; }
+                    .cloud-textarea {
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 6px;
+                        font-size: 12px;
+                        font-family: monospace;
+                        box-sizing: border-box;
+                        background: #2a2a3a;
+                        color: #4fc3f7;
+                        resize: vertical;
+                        min-height: 80px;
+                    }
+                    .cloud-textarea:focus { outline: none; border-color: #4CAF50; }
+                    .cloud-checkbox-label {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 13px;
+                        color: #555;
+                        cursor: pointer;
+                    }
+                    .cloud-checkbox-label input { width: 16px; height: 16px; cursor: pointer; }
                     .cloud-instructions {
                         border-radius: 6px;
                         padding: 12px;
@@ -12976,12 +14254,6 @@ ID: ${taskData.gid}
                     .cloud-instructions ol { margin: 8px 0 0 0; padding-left: 20px; color: #555; }
                     .cloud-instructions li { margin: 4px 0; }
                     .cloud-instructions a { color: #1976D2; }
-                    .cloud-test {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        margin-top: 16px;
-                    }
                     .btn-test {
                         background: #4CAF50;
                         color: white;
@@ -12993,7 +14265,7 @@ ID: ${taskData.gid}
                         width: 100%;
                     }
                     .btn-test:hover { background: #45a049; }
-                    #cloud-test-result { font-size: 13px; }
+                    .btn-test:disabled { background: #999; cursor: wait; }
 
                     .cloud-provider-toggle {
                         display: flex;
@@ -13179,21 +14451,26 @@ ID: ${taskData.gid}
 
                 // v4.5.0: Сохраняем облачные настройки
                 const cloudProvider = this.shadowRoot.querySelector('input[name="cloud-provider"]:checked')?.value;
-                const googleUrlInput = this.shadowRoot.getElementById('google-script-url');
+                const googleUrlsTextarea = this.shadowRoot.getElementById('google-script-urls');
                 const powerAutomateInput = this.shadowRoot.getElementById('power-automate-url');
                 const rocketWebhookInput = this.shadowRoot.getElementById('rocket-webhook-url');
+                const parallelModeCheckbox = this.shadowRoot.getElementById('cloud-parallel-mode');
 
                 if (cloudProvider) {
                     GM_setValue('cloudProvider', cloudProvider);
                 }
-                if (googleUrlInput) {
-                    GM_setValue('googleAppsScriptUrl', googleUrlInput.value.trim());
+                if (googleUrlsTextarea) {
+                    // v4.5.5: Сохраняем все URL (многострочный)
+                    GM_setValue('googleAppsScriptUrl', googleUrlsTextarea.value.trim());
                 }
                 if (powerAutomateInput) {
                     GM_setValue('powerAutomateUrl', powerAutomateInput.value.trim());
                 }
                 if (rocketWebhookInput) {
                     GM_setValue('rocketWebhookUrl', rocketWebhookInput.value.trim());
+                }
+                if (parallelModeCheckbox) {
+                    GM_setValue('cloudParallelMode', parallelModeCheckbox.checked);
                 }
 
                 if (this.onSave) this.onSave();
@@ -13381,56 +14658,94 @@ ID: ${taskData.gid}
                 });
             }
 
-            // v4.5.2: Обработчик теста облачного подключения (простая проверка доступности)
+            // v4.5.6: Обработчик теста облачного подключения (проверяет все URL по очереди с live-обновлением)
             const testCloudBtn = this.shadowRoot.getElementById('test-cloud-connection');
             if (testCloudBtn) {
                 testCloudBtn.addEventListener('click', async () => {
                     const resultEl = this.shadowRoot.getElementById('cloud-test-result');
-                    const googleUrl = this.shadowRoot.getElementById('google-script-url')?.value?.trim();
-
-                    if (!googleUrl) {
+                    const googleUrlsRaw = this.shadowRoot.getElementById('google-script-urls')?.value?.trim();
+                    
+                    if (!googleUrlsRaw) {
                         resultEl.innerHTML = '<span style="color: orange;">⚠️ Введите Google Apps Script URL</span>';
                         return;
                     }
 
-                    // Проверяем формат URL
-                    if (!googleUrl.includes('script.google.com/macros')) {
-                        resultEl.innerHTML = '<span style="color: orange;">⚠️ URL должен быть вида script.google.com/macros/s/.../exec</span>';
+                    // v4.5.6: Парсим несколько URL
+                    const googleUrls = googleUrlsRaw.split('\n').map(u => u.trim()).filter(u => u && u.startsWith('http'));
+                    
+                    if (googleUrls.length === 0) {
+                        resultEl.innerHTML = '<span style="color: orange;">⚠️ Нет валидных URL</span>';
                         return;
                     }
 
-                    resultEl.innerHTML = '<span style="color: #666;">⏳ Проверяю...</span>';
+                    testCloudBtn.disabled = true;
+                    testCloudBtn.textContent = '⏳ Проверяю...';
+                    
+                    const results = [];
+                    
+                    // Функция обновления результата
+                    const updateResult = () => {
+                        const lines = results.map((r, i) => {
+                            const icon = r.status === 'ok' ? '✅' : r.status === 'error' ? '❌' : '⚠️';
+                            const color = r.status === 'ok' ? '#4CAF50' : r.status === 'error' ? '#f44336' : '#ff9800';
+                            const shortUrl = '...' + r.url.slice(-20);
+                            return `<div style="font-size:11px;color:${color}">${icon} #${i+1} ${shortUrl} ${r.error ? '(' + r.error + ')' : ''}</div>`;
+                        }).join('');
+                        
+                        const okCount = results.filter(r => r.status === 'ok').length;
+                        const total = googleUrls.length;
+                        const checked = results.length;
+                        
+                        let summary = '';
+                        if (checked < total) {
+                            summary = `<div style="margin-bottom:4px;color:#666;">⏳ Проверено: ${checked}/${total}</div>`;
+                        } else {
+                            const color = okCount === total ? '#4CAF50' : okCount > 0 ? '#ff9800' : '#f44336';
+                            summary = `<div style="margin-bottom:4px;color:${color};font-weight:bold;">Результат: ${okCount}/${total} ✓</div>`;
+                        }
+                        
+                        resultEl.innerHTML = summary + lines;
+                    };
+                    
+                    for (let i = 0; i < googleUrls.length; i++) {
+                        const url = googleUrls[i];
+                        
+                        // Проверяем формат URL
+                        if (!url.includes('script.google.com/macros')) {
+                            results.push({ url, status: 'invalid', error: 'Неверный формат' });
+                            updateResult();
+                            continue;
+                        }
 
-                    try {
-                        await new Promise((resolve, reject) => {
-                            GM_xmlhttpRequest({
-                                method: 'GET',
-                                url: googleUrl,
-                                timeout: 10000,
-                                onload: (res) => {
-                                    if(DEBUG) console.log('Cloud test response:', res.status, res.responseText?.substring(0, 200));
-
-                                    // Google Apps Script на GET возвращает разные коды:
-                                    // 200 - если есть doGet()
-                                    // 404 - если нет doGet() но скрипт существует
-                                    // Оба случая означают что URL рабочий
-                                    if (res.status === 200 || res.status === 404) {
-                                        resolve();
-                                    } else if (res.status === 401 || res.status === 403) {
-                                        reject(new Error('Ошибка авторизации. Проверьте "Who has access: Anyone"'));
-                                    } else {
-                                        reject(new Error(`HTTP ${res.status}`));
-                                    }
-                                },
-                                onerror: () => reject(new Error('Ошибка сети. Проверьте URL')),
-                                ontimeout: () => reject(new Error('Таймаут. Попробуйте ещё раз'))
+                        try {
+                            await new Promise((resolve, reject) => {
+                                GM_xmlhttpRequest({
+                                    method: 'GET',
+                                    url: url,
+                                    timeout: 10000,
+                                    onload: (res) => {
+                                        if (res.status === 200 || res.status === 404) {
+                                            resolve();
+                                        } else if (res.status === 401 || res.status === 403) {
+                                            reject(new Error('Авторизация'));
+                                        } else {
+                                            reject(new Error(`HTTP ${res.status}`));
+                                        }
+                                    },
+                                    onerror: () => reject(new Error('Сеть')),
+                                    ontimeout: () => reject(new Error('Таймаут'))
+                                });
                             });
-                        });
-
-                        resultEl.innerHTML = '<span style="color: green;">✅ URL доступен</span>';
-                    } catch (e) {
-                        resultEl.innerHTML = '<span style="color: red;">❌ ' + e.message + '</span>';
+                            results.push({ url, status: 'ok' });
+                        } catch (e) {
+                            results.push({ url, status: 'error', error: e.message });
+                        }
+                        
+                        updateResult();
                     }
+
+                    testCloudBtn.disabled = false;
+                    testCloudBtn.textContent = '🔗 Проверить подключение';
                 });
             }
         }
