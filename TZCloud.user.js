@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         SEO Subdomain Automation Suite v4.6.16
+// @name         SEO Subdomain Automation Suite
 // @namespace    http://tampermonkey.net/
 // @version      4.6.16
 // @description  v4.6.16 - Отдел автоматически добавляется в ТЗ
