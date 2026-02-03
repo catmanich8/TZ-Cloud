@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         SEO Subdomain Automation Suite
 // @namespace    http://tampermonkey.net/
-// @version      4.6.17
-// @description  v4.6.17 - AMP select, обязательный 301/404, новый шаблон, адаптивный дизайн
+// @version      4.6.18
+// @description  v4.6.18 - Расширенная таблица базы (CMS/hreflang/статус/заметки), автосохранение полей при создании ТЗ, исправлен импорт/экспорт
 // @author       Timur - Head of Automation
 // @match        https://app.asana.com/*
 // @match        https://best-seo-crm.top/*
@@ -1026,8 +1026,7 @@ https://{{newSub}}/
                 { fieldId: 'amp', enabled: true, required: false },
                 { fieldId: 'notes', enabled: false, required: false }
             ],
-            tzTemplate: `1) Отдать 404 для страниц:
-{{oldUrlFormatted}}
+            tzTemplate: `1) {{oldUrlFormatted}}
 
 2) Создать страницу на дропе (дубль главной):
 https://{{newSub}}/
@@ -1304,7 +1303,7 @@ https://{{newSub}}/
         .btn-settings-mass { background: #546E7A; color: #fff; }
         .btn-settings-mass:hover { background: #455A64; }
 
-        /* v4.5.0: Кнопка сводки */
+        /* v4.5.0: Кнопка выгрузки ТЗ */
         .btn-summary { background: #9C27B0; color: #fff; }
         .btn-summary:hover { background: #7B1FA2; }
 
@@ -4589,7 +4588,8 @@ https://{{newSub}}/
                     department: '', cms: '', status: 'active', hasAMP: false, dmcaDefault: false,
                     hreflangTemplate: '', oldSubdomains: [], currentSubdomain: '',
                     assigneeGid: '', projectGid: '', owner: '',
-                    addedDate: new Date().toISOString().split('T')[0], lastTaskDate: '', notes: ''
+                    addedDate: new Date().toISOString().split('T')[0], lastTaskDate: '', notes: '',
+                    alternateDomain: '', toUrl: '', oldUrl: ''
                 };
             }
             newDb[domain].oldSubdomains = historyDb[domain].map(url => ({ url, action: '301', usedDate: '' }));
@@ -4651,7 +4651,11 @@ https://{{newSub}}/
             owner: data.owner || '',
             addedDate: data.addedDate || new Date().toISOString().split('T')[0],
             lastTaskDate: data.lastTaskDate || '',
-            notes: data.notes || ''
+            notes: data.notes || '',
+            // v4.6.17: Добавлены новые поля
+            alternateDomain: data.alternateDomain || '',
+            toUrl: data.toUrl || '',
+            oldUrl: data.oldUrl || ''
         };
         saveSitesDatabase(db);
     }
@@ -4803,6 +4807,31 @@ https://{{newSub}}/
             }
         }
 
+        // v4.6.17: Если домена нет в базе - создаём его
+        if (!targetDomain && domain) {
+            targetDomain = domain;
+            db[targetDomain] = {
+                department: data.department || '',
+                cms: data.cms || '',
+                status: 'active',
+                hasAMP: data.hasAMP || false,
+                dmcaDefault: data.dmcaDefault || false,
+                hreflangTemplate: '',
+                oldSubdomains: [],
+                currentSubdomain: '',
+                assigneeGid: '',
+                projectGid: '',
+                owner: '',
+                addedDate: new Date().toISOString().split('T')[0],
+                lastTaskDate: '',
+                notes: '',
+                alternateDomain: '',
+                toUrl: '',
+                oldUrl: ''
+            };
+            if(DEBUG) console.log('📝 Домен автоматически добавлен в базу:', targetDomain);
+        }
+
         if (targetDomain && db[targetDomain]) {
             // Основной домен: отдел, CMS, флаги
             if (data.department) db[targetDomain].department = data.department;
@@ -4814,8 +4843,18 @@ https://{{newSub}}/
             if (data.currentSubdomain) db[targetDomain].currentSubdomain = data.currentSubdomain;
             if (data.lastTaskDate) db[targetDomain].lastTaskDate = data.lastTaskDate;
 
+            // v4.6.17: Сохраняем alternateDomain, toUrl, oldUrl
+            if (data.alternateDomain) db[targetDomain].alternateDomain = data.alternateDomain;
+            if (data.toUrl) db[targetDomain].toUrl = data.toUrl;
+            if (data.oldUrl) db[targetDomain].oldUrl = data.oldUrl;
+
             // Старый поддомен: добавляем/обновляем в oldSubdomains с action
             if (data.oldSubdomain) {
+                // v4.6.17: Инициализация массива если его нет
+                if (!db[targetDomain].oldSubdomains) {
+                    db[targetDomain].oldSubdomains = [];
+                }
+                
                 const existingIdx = db[targetDomain].oldSubdomains.findIndex(s =>
                     normalizeDomain(s.url) === normalizeDomain(data.oldSubdomain)
                 );
@@ -4880,7 +4919,11 @@ https://{{newSub}}/
                 hreflangTemplate: '',
                 oldSubdomains: [],
                 currentSubdomain: '',
-                addedDate: new Date().toISOString().split('T')[0]
+                addedDate: new Date().toISOString().split('T')[0],
+                // v4.6.17: Новые поля
+                alternateDomain: '',
+                toUrl: '',
+                oldUrl: ''
             };
         }
 
@@ -4985,7 +5028,11 @@ https://{{newSub}}/
                                 owner: getVal('owner') || '',
                                 addedDate: getVal('addeddate') || new Date().toISOString().split('T')[0],
                                 lastTaskDate: getVal('lasttaskdate') || '',
-                                notes: getVal('notes')
+                                notes: getVal('notes'),
+                                // v4.6.17: Новые поля
+                                alternateDomain: getVal('alternatedomain') || '',
+                                toUrl: getVal('tourl') || '',
+                                oldUrl: getVal('oldurl') || ''
                             };
                         }
                     }
@@ -5019,7 +5066,8 @@ https://{{newSub}}/
                                     department: '', cms: '', status: 'active', hasAMP: false, dmcaDefault: false,
                                     hreflangTemplate: '', oldSubdomains: [], currentSubdomain: '',
                                     assigneeGid: '', projectGid: '', owner: '',
-                                    addedDate: new Date().toISOString().split('T')[0], lastTaskDate: '', notes: ''
+                                    addedDate: new Date().toISOString().split('T')[0], lastTaskDate: '', notes: '',
+                                    alternateDomain: '', toUrl: '', oldUrl: ''
                                 };
                             }
 
@@ -5352,7 +5400,7 @@ https://{{newSub}}/
                         <button class="btn-clear-all" id="clear-all-tasks">🗑️ Очистить <span id="selected-tasks-count"></span></button>
                         <button class="btn-import" id="import-tasks-btn">📥 Импорт</button>
                         <button class="btn-export" id="export-tasks-btn">📤 Экспорт</button>
-                        <button class="btn-summary" id="generate-summary-btn" title="Сохранить ТЗ локально (Excel)">📊 Сводка <span class="selected-indicator"></span></button>
+                        <button class="btn-summary" id="generate-summary-btn" title="Сохранить ТЗ локально (Excel)">📊 Выгрузить ТЗ <span class="selected-indicator"></span></button>
                         <button class="btn-cloud" id="generate-cloud-btn" title="Сохранить ТЗ в Google Sheets + пинг ответственных">☁️ Облако <span class="selected-indicator"></span></button>
                         <button class="btn-field-settings" id="open-unified-settings-btn" title="Настройка полей, aliases и типов задач">⚙️ Настройка полей</button>
                         <button class="btn-settings-mass" id="open-history-mass" title="История автоматизаций">📋</button>
@@ -5399,7 +5447,7 @@ https://{{newSub}}/
             const tasksToProcess = this.getSelectedTasks();
 
             if (!tasksToProcess.length) {
-                showToast('⚠️ Выберите задачи для сводки.\n\nОтметьте галочками нужные задачи в таблице.', 'warning');
+                showToast('⚠️ Выберите задачи для выгрузки ТЗ.\n\nОтметьте галочками нужные задачи в таблице.', 'warning');
                 return;
             }
 
@@ -8468,7 +8516,11 @@ https://{{newSub}}/
                         lastTaskDate: new Date().toISOString().split('T')[0],
                         oldSubdomain: task.oldSub,
                         redirect301: task.redirect301,
-                        redirect404: task.redirect404
+                        redirect404: task.redirect404,
+                        // v4.6.17: Новые поля
+                        alternateDomain: task.alternateDomain,
+                        toUrl: task.toUrl,
+                        oldUrl: task.oldUrl
                     });
 
                     // Генерируем ТЗ
@@ -9296,7 +9348,7 @@ ${hreflangCode}
                         this.openAutomationHistoryModal();
                     } else if (target.id === 'process-all-tasks' || target.closest('#process-all-tasks')) {
                         this.processAllTasks();
-                    // v4.5.0: Кнопка сводки
+                    // v4.5.0: Кнопка выгрузки ТЗ
                     } else if (target.id === 'generate-summary-btn' || target.closest('#generate-summary-btn')) {
                         this.generateSummaryReport(); // Генерация ТЗ
                     // v4.5.0: Кнопка облачного сохранения
@@ -10011,7 +10063,11 @@ ${hreflangCode}
                     lastTaskDate: new Date().toISOString().split('T')[0],
                     oldSubdomain: data.oldSub,
                     redirect301: data.redirect301,
-                    redirect404: data.redirect404
+                    redirect404: data.redirect404,
+                    // v4.6.17: Новые поля
+                    alternateDomain: data.alternateDomain,
+                    toUrl: data.toUrl,
+                    oldUrl: data.oldUrl
                 });
 
                 const tz = this.generateTaskDescription(data);
@@ -12081,7 +12137,15 @@ ID: ${taskData.gid}
                         hasAMP: data.amp,
                         dmcaDefault: data.dmca,
                         currentSubdomain: data.newSub,
-                        lastTaskDate: new Date().toISOString().split('T')[0]
+                        lastTaskDate: new Date().toISOString().split('T')[0],
+                        // v4.6.17: Добавлено сохранение oldSub
+                        oldSubdomain: data.oldSub,
+                        redirect301: data.redirect301,
+                        redirect404: data.redirect404,
+                        // v4.6.17: Новые поля
+                        alternateDomain: data.alternateDomain,
+                        toUrl: data.toUrl,
+                        oldUrl: data.oldUrl
                     });
 
                     const tz = this.generateTaskDescription(data);
@@ -12627,18 +12691,22 @@ ID: ${taskData.gid}
                 .sites-search { width: 250px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #000; background: #fff; }
                 .sites-search::placeholder { color: #888; }
                 .sites-filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 150px; color: #333; background: #fff; }
-                .sites-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #333; table-layout: fixed; }
+                .sites-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #000; table-layout: fixed; background: #fff; }
                 .sites-table th { background: #f8f9fa; padding: 8px 6px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; color: #333; white-space: nowrap; }
-                .sites-table td { padding: 8px 6px; border-bottom: 1px solid #eee; color: #333; overflow: hidden; text-overflow: ellipsis; }
+                .sites-table td { padding: 8px 6px; border-bottom: 1px solid #eee; color: #000 !important; overflow: hidden; text-overflow: ellipsis; background: #fff; }
                 .sites-table tr:hover { background: #f8f9fa; }
-                /* v4.6.17: Адаптивные ширины колонок */
-                .sites-table th:nth-child(1), .sites-table td:nth-child(1) { width: 20%; } /* Домен */
-                .sites-table th:nth-child(2), .sites-table td:nth-child(2) { width: 10%; } /* Отдел */
-                .sites-table th:nth-child(3), .sites-table td:nth-child(3) { width: 12%; } /* Подмена */
-                .sites-table th:nth-child(4), .sites-table td:nth-child(4) { width: 15%; } /* URL дропа */
-                .sites-table th:nth-child(5), .sites-table td:nth-child(5) { width: 15%; } /* oldURL */
-                .sites-table th:nth-child(6), .sites-table td:nth-child(6) { width: 10%; } /* Флаги */
-                .sites-table th:nth-child(7), .sites-table td:nth-child(7) { width: 18%; } /* Действия */
+                /* v4.6.17: Адаптивные ширины колонок (11 колонок) */
+                .sites-table th:nth-child(1), .sites-table td:nth-child(1) { width: 13%; } /* Домен */
+                .sites-table th:nth-child(2), .sites-table td:nth-child(2) { width: 7%; } /* Отдел */
+                .sites-table th:nth-child(3), .sites-table td:nth-child(3) { width: 7%; } /* CMS */
+                .sites-table th:nth-child(4), .sites-table td:nth-child(4) { width: 8%; } /* hreflang */
+                .sites-table th:nth-child(5), .sites-table td:nth-child(5) { width: 10%; } /* Подмена */
+                .sites-table th:nth-child(6), .sites-table td:nth-child(6) { width: 10%; } /* URL дропа */
+                .sites-table th:nth-child(7), .sites-table td:nth-child(7) { width: 10%; } /* oldURL */
+                .sites-table th:nth-child(8), .sites-table td:nth-child(8) { width: 10%; } /* Флаги */
+                .sites-table th:nth-child(9), .sites-table td:nth-child(9) { width: 5%; } /* Статус */
+                .sites-table th:nth-child(10), .sites-table td:nth-child(10) { width: 8%; } /* Заметки */
+                .sites-table th:nth-child(11), .sites-table td:nth-child(11) { width: 12%; } /* Действия */
                 .sites-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
                 .sites-badge-amp { background: #e3f2fd; color: #1976d2; }
                 .sites-badge-dmca { background: #fff3e0; color: #f57c00; }
@@ -12649,12 +12717,9 @@ ID: ${taskData.gid}
                 .sites-action-btn { background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 16px; }
                 .sites-action-btn-select { background: #e8f5e9; color: #2e7d32; font-weight: bold; }
                 .sites-action-btn-select:hover { background: #c8e6c9; }
-                .sites-action-btn-mini { background: #e3f2fd; color: #1976d2; font-size: 12px; padding: 2px 6px; margin-left: 4px; }
-                .sites-action-btn-mini:hover { background: #bbdefb; }
                 .sites-action-btn:hover { background: #e0e0e0; }
-                .sites-cell-value { display: flex; align-items: center; gap: 2px; }
-                .sites-cell-text { font-size: 12px; color: #555; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .sites-cell-empty { color: #bbb; font-size: 12px; }
+                .sites-cell-text { font-size: 12px; color: #000 !important; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .sites-cell-empty { color: #999 !important; font-size: 12px; }
                 .sites-subdomains-count { background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #333; }
                 .sites-empty { text-align: center; padding: 40px; color: #666; }
                 .sites-form { background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
@@ -12874,35 +12939,32 @@ ID: ${taskData.gid}
                 return;
             }
 
-            let html = '<table class="sites-table"><thead><tr><th>Домен</th><th>Отдел</th><th>Подмена</th><th>URL дропа (301/404)</th><th>oldURL</th><th>Флаги</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="sites-table"><thead><tr><th>Домен</th><th>Отдел</th><th>CMS</th><th>hreflang</th><th>Подмена</th><th>URL дропа</th><th>oldURL</th><th>Флаги</th><th>Статус</th><th>Заметки</th><th>Действия</th></tr></thead><tbody>';
             sites.forEach(site => {
                 const flags = [];
                 if (site.hasAMP) flags.push('<span class="sites-badge sites-badge-amp">AMP</span>');
                 if (site.dmcaDefault) flags.push('<span class="sites-badge sites-badge-dmca">DMCA</span>');
-                const tpl = site.hreflangTemplate ? (loadTemplates()[site.hreflangTemplate]?.name || site.hreflangTemplate) : '—';
-                // v4.5.9: Отображаем новые поля с кнопками выбора
+                const tplName = site.hreflangTemplate ? (loadTemplates()[site.hreflangTemplate]?.name || site.hreflangTemplate) : '';
+                // v4.5.9: Отображаем новые поля
                 const altDomain = site.alternateDomain || '';
                 const toUrlVal = site.toUrl || '';
                 const oldUrlVal = site.oldUrl || '';
+                const notesVal = site.notes || '';
+                const statusText = site.status === 'inactive' ? '🔴' : '🟢';
                 html += `<tr>
-                    <td style="font-weight:500;">
+                    <td style="font-weight:500; color:#000;">
                         ${site.domain}
                         ${this.onSelect ? `<button class="sites-action-btn sites-action-btn-select" data-action="select" data-domain="${site.domain}" title="Выбрать всё">✓</button>` : ''}
                     </td>
-                    <td>${site.department ? `<span class="sites-badge sites-badge-dept">${site.department}</span>` : '—'}</td>
-                    <td class="sites-cell-value">
-                        ${altDomain ? `<span class="sites-cell-text" title="${altDomain}">${altDomain.length > 15 ? altDomain.substring(0,15)+'...' : altDomain}</span>` : '<span class="sites-cell-empty">—</span>'}
-                        ${altDomain && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-alt" data-domain="${site.domain}" data-value="${altDomain}" title="Вставить в Подмена">⬇</button>` : ''}
-                    </td>
-                    <td class="sites-cell-value">
-                        ${toUrlVal ? `<span class="sites-cell-text" title="${toUrlVal}">${toUrlVal.length > 15 ? toUrlVal.substring(0,15)+'...' : toUrlVal}</span>` : '<span class="sites-cell-empty">—</span>'}
-                        ${toUrlVal && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-tourl" data-domain="${site.domain}" data-value="${toUrlVal}" title="Вставить в URL дропа (301/404)">⬇</button>` : ''}
-                    </td>
-                    <td class="sites-cell-value">
-                        ${oldUrlVal ? `<span class="sites-cell-text" title="${oldUrlVal}">${oldUrlVal.length > 15 ? oldUrlVal.substring(0,15)+'...' : oldUrlVal}</span>` : '<span class="sites-cell-empty">—</span>'}
-                        ${oldUrlVal && this.onSelect ? `<button class="sites-action-btn sites-action-btn-mini" data-action="select-oldurl" data-domain="${site.domain}" data-value="${oldUrlVal}" title="Вставить в URL 404">⬇</button>` : ''}
-                    </td>
-                    <td>${flags.join(' ') || '—'}</td>
+                    <td style="color:#000;">${site.department ? `<span class="sites-badge sites-badge-dept">${site.department}</span>` : '—'}</td>
+                    <td style="color:#000;">${site.cms ? `<span class="sites-badge sites-badge-cms">${site.cms}</span>` : '—'}</td>
+                    <td style="color:#000;">${tplName ? `<span class="sites-cell-text" title="${tplName}" style="color:#000;">${tplName.length > 10 ? tplName.substring(0,10)+'...' : tplName}</span>` : '—'}</td>
+                    <td style="color:#000;">${altDomain ? `<span class="sites-cell-text" title="${altDomain}" style="color:#000;">${altDomain.length > 12 ? altDomain.substring(0,12)+'...' : altDomain}</span>` : '—'}</td>
+                    <td style="color:#000;">${toUrlVal ? `<span class="sites-cell-text" title="${toUrlVal}" style="color:#000;">${toUrlVal.length > 12 ? toUrlVal.substring(0,12)+'...' : toUrlVal}</span>` : '—'}</td>
+                    <td style="color:#000;">${oldUrlVal ? `<span class="sites-cell-text" title="${oldUrlVal}" style="color:#000;">${oldUrlVal.length > 12 ? oldUrlVal.substring(0,12)+'...' : oldUrlVal}</span>` : '—'}</td>
+                    <td style="color:#000;">${flags.length ? flags.join(' ') : '—'}</td>
+                    <td style="text-align:center;">${statusText}</td>
+                    <td style="color:#000;">${notesVal ? `<span class="sites-cell-text" title="${notesVal}" style="color:#000;">${notesVal.length > 10 ? notesVal.substring(0,10)+'...' : notesVal}</span>` : '—'}</td>
                     <td>
                         <button class="sites-action-btn" data-action="edit" data-domain="${site.domain}" title="Редактировать">✏️</button>
                         <button class="sites-action-btn" data-action="delete" data-domain="${site.domain}" title="Удалить">🗑️</button>
@@ -12927,16 +12989,6 @@ ID: ${taskData.gid}
                         const site = db[domain];
                         this.onSelect(domain, site);
                         this.close();
-                    }
-                    // v4.5.9: Выбор отдельных полей
-                    if (action === 'select-alt' && this.onSelect) {
-                        this.onSelect(domain, { _fieldOnly: 'alternateDomain', alternateDomain: value });
-                    }
-                    if (action === 'select-tourl' && this.onSelect) {
-                        this.onSelect(domain, { _fieldOnly: 'toUrl', toUrl: value });
-                    }
-                    if (action === 'select-oldurl' && this.onSelect) {
-                        this.onSelect(domain, { _fieldOnly: 'oldUrl', oldUrl: value });
                     }
                 });
             });
@@ -13283,10 +13335,10 @@ ID: ${taskData.gid}
 
                 const wb = XLSX.utils.book_new();
 
-            const sheet1Data = [['domain', 'department', 'cms', 'status', 'hasAMP', 'dmcaDefault', 'hreflangTemplate', 'notes']];
+            const sheet1Data = [['domain', 'department', 'cms', 'status', 'hasAMP', 'dmcaDefault', 'hreflangTemplate', 'alternateDomain', 'toUrl', 'oldUrl', 'notes']];
             for (const domain in db) {
                 const s = db[domain];
-                sheet1Data.push([domain, s.department, s.cms, s.status, s.hasAMP ? 'true' : 'false', s.dmcaDefault ? 'true' : 'false', s.hreflangTemplate, s.notes]);
+                sheet1Data.push([domain, s.department, s.cms, s.status, s.hasAMP ? 'true' : 'false', s.dmcaDefault ? 'true' : 'false', s.hreflangTemplate, s.alternateDomain || '', s.toUrl || '', s.oldUrl || '', s.notes]);
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheet1Data), 'Основной домен');
 
