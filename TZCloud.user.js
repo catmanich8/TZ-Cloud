@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         SEO Subdomain Automation Suite
 // @namespace    http://tampermonkey.net/
-// @version      4.6.16
-// @description  v4.6.16 - Отдел автоматически добавляется в ТЗ
+// @version      4.6.17
+// @description  v4.6.17 - AMP select, обязательный 301/404, новый шаблон, адаптивный дизайн
 // @author       Timur - Head of Automation
 // @match        https://app.asana.com/*
 // @match        https://best-seo-crm.top/*
@@ -739,10 +739,16 @@ https://script.google.com/macros/s/AKfycbzVKwCJ4T2jS75ckn3c1PBQaTp_N_0jo-aM2_Trw
         amp: {
             id: 'amp',
             label: 'AMP',
-            type: 'checkbox',
+            type: 'select',
             variable: '{{amp}}',
-            defaultValue: false,
-            width: 'tiny',
+            options: [
+                { value: '', label: '—' },
+                { value: 'domain', label: 'На домене' },
+                { value: 'subdomain', label: 'На поддомене' },
+                { value: 'both', label: 'На обоих' }
+            ],
+            defaultValue: '',
+            width: 'small',
             aliases: ['amp', 'амп', 'accelerated']
         },
         assignee: {
@@ -1005,17 +1011,36 @@ https://{{newSub}}/
 
 Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
         },
-        redirect404: {
-            id: 'redirect404',
-            name: 'Отключение поддомена (404)',
-            icon: '🚫',
-            tzTemplate: `1) Отключить поддомен и отдать 404:
-https://{{oldSub}}/
+        // v4.6.17: Новый шаблон - Отключить хрефланги и внедрить поддомен
+        disableHreflang: {
+            id: 'disableHreflang',
+            name: 'Отключить хрефланги и внедрить поддомен',
+            icon: '🏷️❌',
+            fields: [
+                { fieldId: 'taskName', enabled: true, required: true },
+                { fieldId: 'department', enabled: true, required: false },
+                { fieldId: 'domain', enabled: true, required: false },
+                { fieldId: 'oldUrl', enabled: true, required: false },
+                { fieldId: 'newSub', enabled: true, required: false },
+                { fieldId: 'hreflang', enabled: true, required: false },
+                { fieldId: 'amp', enabled: true, required: false },
+                { fieldId: 'notes', enabled: false, required: false }
+            ],
+            tzTemplate: `1) Отдать 404 для страниц:
+{{oldUrlFormatted}}
 
-2) Проверить что все ссылки на этот поддомен удалены или перенаправлены
+2) Создать страницу на дропе (дубль главной):
+https://{{newSub}}/
 
-⚠️ Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
+3) На главной странице и поддомене (https://{{domain}}/ и https://{{newSub}}/) прописать канониклы и хрефланги:
+{{hreflangCode}}
+Меняем старые канониклы и хрефланги на новые
+
+{{amp}}
+
+Обратить внимание, что на поддомене в меню должны быть ссылки на внутряки - либо на поддомен, либо поставить заглушки ПП`
         },
+        // v4.6.17: Удалён шаблон redirect404 (дублировал функционал)
         disableAlternateDomain: {
             id: 'disableAlternateDomain',
             name: 'Отключить подмену и внедрить поддомен',
@@ -1313,7 +1338,7 @@ https://{{newSub}}/
 
         .table-header {
             display: grid;
-            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 50px 100px 45px 55px 65px;
+            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 90px 100px 45px 55px 65px;
             gap: 6px;
             padding: 12px 10px;
             background: linear-gradient(135deg, #4CAF50, #45a049);
@@ -1349,7 +1374,7 @@ https://{{newSub}}/
 
         .task-row {
             display: grid;
-            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 50px 100px 45px 55px 65px;
+            grid-template-columns: 35px 40px 150px 80px 140px 140px 140px 140px 60px 140px 90px 80px 70px 50px 90px 100px 45px 55px 65px;
             gap: 6px;
             padding: 10px;
             border-bottom: 1px solid #e0e0e0;
@@ -1361,17 +1386,23 @@ https://{{newSub}}/
         .task-row:hover { background: #f0f8f0; }
         .task-row.selected { background: #e3f2fd; }
 
-        .cell-checkbox, .cell-dmca, .cell-amp {
+        .cell-checkbox, .cell-dmca {
             display: flex;
             align-items: center;
             justify-content: center;
             padding-top: 8px;
         }
 
-        .cell-checkbox input, .cell-dmca input, .cell-amp input {
+        .cell-checkbox input, .cell-dmca input {
             width: 18px;
             height: 18px;
             cursor: pointer;
+        }
+
+        /* v4.6.17: AMP теперь select */
+        .cell-amp {
+            display: flex;
+            align-items: center;
         }
 
         .cell-num {
@@ -1426,7 +1457,7 @@ https://{{newSub}}/
             color: #333;
         }
 
-        .cell-department select, .cell-template select, .cell-priority select, .cell-cms select {
+        .cell-department select, .cell-template select, .cell-priority select, .cell-cms select, .cell-amp select, .cell-assignee select {
             width: 100%;
             padding: 8px 6px;
             border: 1px solid #d1d5db;
@@ -1465,16 +1496,8 @@ https://{{newSub}}/
         }
 
         .cell-assignee {
-            padding-top: 4px;
-        }
-        .cell-assignee select {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 11px;
-            background: #fff;
-            color: #333;
+            display: flex;
+            align-items: center;
         }
         .cell-assignee select:focus {
             outline: none;
@@ -4405,6 +4428,17 @@ https://{{newSub}}/
         return sections.join('\n\n');
     }
 
+    // v4.6.17: Форматирование AMP для ТЗ
+    function formatAmpText(ampValue, domain, newSub) {
+        if (!ampValue) return '';
+        const labels = {
+            'domain': `https://${domain || '{{domain}}'}/`,
+            'subdomain': `https://${newSub || '{{newSub}}'}/`,
+            'both': `https://${domain || '{{domain}}'}/ и https://${newSub || '{{newSub}}'}/`
+        };
+        return labels[ampValue] ? `Амп ставим на: ${labels[ampValue]}` : '';
+    }
+
     function getDomainVariants(domain) {
         const normalized = normalizeDomain(domain);
         if (!normalized) return [];
@@ -5192,7 +5226,7 @@ https://{{newSub}}/
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Старый поддомен *</label>
+                        <label class="form-label">Старый поддомен</label>
                         <div class="input-with-settings" style="position: relative;">
                             <input type="text" class="form-input" id="oldSub" placeholder="old.example.com" style="flex: 1;" autocomplete="off" />
                             <span class="settings-icon-btn" id="manage-history" title="Управление историей поддоменов">📜</span>
@@ -5377,6 +5411,17 @@ https://{{newSub}}/
                     .filter(i => i !== null)
                     .join(', ');
                 showToast('⚠️ Не выбран тип задачи!\n\nЗаполните поле "Задача" в строках: ' + emptyIndexes, 'warning');
+                return;
+            }
+
+            // v4.6.17: Проверка выбора 301/404 для задач с oldSub
+            const noRedirectTasks = tasksToProcess.filter((t, i) => t.oldSub && !t.redirect301 && !t.redirect404);
+            if (noRedirectTasks.length > 0) {
+                const noRedirectIndexes = tasksToProcess
+                    .map((t, i) => (t.oldSub && !t.redirect301 && !t.redirect404) ? (i + 1) : null)
+                    .filter(i => i !== null)
+                    .join(', ');
+                showToast('⚠️ Не выбран тип редиректа (301/404)!\n\nВыберите 301 или 404 для старого поддомена в строках: ' + noRedirectIndexes, 'warning');
                 return;
             }
 
@@ -5573,7 +5618,7 @@ https://{{newSub}}/
                         .replace(/\{\{priority\}\}/g, task.priority || '')
                         .replace(/\{\{cms\}\}/g, task.cms || '')
                         .replace(/\{\{dmca\}\}/g, task.dmca ? 'Да' : 'Нет')
-                        .replace(/\{\{amp\}\}/g, task.amp ? 'Да' : 'Нет')
+                        .replace(/\{\{amp\}\}/g, formatAmpText(task.amp, domain, newSub))
                         .replace(/\{\{assignee\}\}/g, assigneeName)
                         .replace(/\{\{subtasks\}\}/g, subtasksList)
                         .replace(/\{\{notes\}\}/g, task.notes || '');
@@ -5620,7 +5665,7 @@ https://{{newSub}}/
                     if (task.priority) lines.push(`Приоритет:\t${task.priority}`);
                     if (task.cms) lines.push(`CMS:\t${task.cms}`);
                     if (task.dmca) lines.push(`DMCA:\tДа`);
-                    if (task.amp) lines.push(`AMP:\tДа`);
+                    if (task.amp) { const ampText = formatAmpText(task.amp, domain, newSub); if (ampText) lines.push(`AMP:\t${ampText}`); }
                     if (assigneeName) lines.push(`Ответственный:\t${assigneeName}`);
                     if (task.notes) lines.push(`Примечания:\t${task.notes}`);
 
@@ -5655,7 +5700,7 @@ https://{{newSub}}/
                     if (task.redirect301) additionalInfo.push('301 редирект: Да');
                     if (task.redirect404) additionalInfo.push('404 ошибка: Да');
                     if (task.dmca) additionalInfo.push('DMCA: Да');
-                    if (task.amp) additionalInfo.push('AMP: Да');
+                    if (task.amp) { const ampText = formatAmpText(task.amp, domain, newSub); if (ampText) additionalInfo.push('AMP: ' + ampText); }
                     if (task.priority) additionalInfo.push(`Приоритет: ${task.priority}`);
                     if (task.cms) additionalInfo.push(`CMS: ${task.cms}`);
                     if (assigneeName) additionalInfo.push(`Ответственный: ${assigneeName}`);
@@ -5768,6 +5813,17 @@ https://{{newSub}}/
                     .filter(i => i !== null)
                     .join(', ');
                 showToast('⚠️ Не выбран тип задачи!\n\nЗаполните поле "Задача" в строках: ' + emptyIndexes, 'warning');
+                return;
+            }
+
+            // v4.6.17: Проверка выбора 301/404 для задач с oldSub
+            const noRedirectTasks = tasksToProcess.filter((t, i) => t.oldSub && !t.redirect301 && !t.redirect404);
+            if (noRedirectTasks.length > 0) {
+                const noRedirectIndexes = tasksToProcess
+                    .map((t, i) => (t.oldSub && !t.redirect301 && !t.redirect404) ? (i + 1) : null)
+                    .filter(i => i !== null)
+                    .join(', ');
+                showToast('⚠️ Не выбран тип редиректа (301/404)!\n\nВыберите 301 или 404 для старого поддомена в строках: ' + noRedirectIndexes, 'warning');
                 return;
             }
 
@@ -6405,7 +6461,7 @@ https://{{newSub}}/
                     if (task.priority) lines.push(`Приоритет:\t${task.priority}`);
                     if (task.cms) lines.push(`CMS:\t${task.cms}`);
                     if (task.dmca) lines.push(`DMCA:\tДа`);
-                    if (task.amp) lines.push(`AMP:\tДа`);
+                    if (task.amp) { const ampText = formatAmpText(task.amp, domain, newSub); if (ampText) lines.push(`AMP:\t${ampText}`); }
                     if (assigneeName) lines.push(`Ответственный:\t${assigneeName}`);
                     if (task.notes) lines.push(`Примечания:\t${task.notes}`);
 
@@ -6440,7 +6496,7 @@ https://{{newSub}}/
                     if (task.redirect301) additionalInfo.push('301 редирект: Да');
                     if (task.redirect404) additionalInfo.push('404 ошибка: Да');
                     if (task.dmca) additionalInfo.push('DMCA: Да');
-                    if (task.amp) additionalInfo.push('AMP: Да');
+                    if (task.amp) { const ampText = formatAmpText(task.amp, domain, newSub); if (ampText) additionalInfo.push('AMP: ' + ampText); }
                     if (task.priority) additionalInfo.push('Приоритет: ' + task.priority);
                     if (task.cms) additionalInfo.push('CMS: ' + task.cms);
                     if (assigneeName) additionalInfo.push('Ответственный: ' + assigneeName);
@@ -6670,7 +6726,7 @@ https://{{newSub}}/
                 priority: '',
                 cms: '',
                 dmca: false,
-                amp: false,
+                amp: '',  // v4.6.17: select вместо checkbox
                 assignee: '',  // v4.5.0: ответственный (gid из Asana)
                 pingRocket: false,  // v4.5.0: пинг в Rocket.Chat
                 notes: '',  // v4.5.0: примечания
@@ -6827,7 +6883,9 @@ https://{{newSub}}/
             };
 
             // Функция добавления звёздочки
+            // v4.6.17: oldSub не отмечается как обязательное
             const mark = (field, label) => {
+                if (field === 'oldSub') return label; // oldSub всегда необязательный
                 return requiredFields.has(field)
                     ? `${label}<span class="required-mark">*</span>`
                     : label;
@@ -7008,7 +7066,14 @@ https://{{newSub}}/
                         </select>
                     </div>
                     <div class="cell-dmca"><input type="checkbox" data-field="dmca" ${task.dmca ? 'checked' : ''} /></div>
-                    <div class="cell-amp"><input type="checkbox" data-field="amp" ${task.amp ? 'checked' : ''} /></div>
+                    <div class="cell-amp">
+                        <select data-field="amp">
+                            <option value="" ${!task.amp ? 'selected' : ''}>—</option>
+                            <option value="domain" ${task.amp === 'domain' ? 'selected' : ''}>Домен</option>
+                            <option value="subdomain" ${task.amp === 'subdomain' ? 'selected' : ''}>Поддомен</option>
+                            <option value="both" ${task.amp === 'both' ? 'selected' : ''}>Оба</option>
+                        </select>
+                    </div>
                     <div class="cell-assignee">
                         <select data-field="assignee" class="${assigneeClass}">
                             <option value="">—</option>
@@ -7484,7 +7549,7 @@ https://{{newSub}}/
                     if (current.toLowerCase().includes(value.toLowerCase())) {
                         items = [{
                             value: current,
-                            meta: 'Текущий поддомен',
+                            meta: 'Новый поддомен',
                             data: { url: current }
                         }];
                     }
@@ -8687,7 +8752,14 @@ ${hreflangCode}
                                 priority: getVal('priority') || '',
                                 cms: getVal('cms') || '',
                                 dmca: ['true', '1', 'да'].includes(getVal('dmca').toLowerCase()),
-                                amp: ['true', '1', 'да'].includes(getVal('amp').toLowerCase()),
+                                amp: (() => {
+                                    const val = getVal('amp').toLowerCase();
+                                    if (['domain', 'домен', 'на домене'].includes(val)) return 'domain';
+                                    if (['subdomain', 'поддомен', 'на поддомене'].includes(val)) return 'subdomain';
+                                    if (['both', 'оба', 'на обоих'].includes(val)) return 'both';
+                                    if (['true', '1', 'да'].includes(val)) return 'both'; // обратная совместимость
+                                    return '';
+                                })(),
                                 assignee: this.resolveAssignee(getVal('assignee') || ''),
                                 pingRocket: ['true', '1', 'да'].includes(getVal('pingRocket').toLowerCase()),
                                 notes: getVal('notes') || '',
@@ -8812,6 +8884,7 @@ ${hreflangCode}
             const priorities = ['High', 'Medium', 'Low'];
             const redirects = ['301', '404', '-'];
             const boolValues = ['true', 'false'];
+            const ampValues = ['domain', 'subdomain', 'both'];  // v4.6.17: отдельный список для AMP
             const subtaskTemplates = loadSubtaskTemplates();
 
             // Маппинг для конвертации
@@ -8882,14 +8955,14 @@ ${hreflangCode}
             // Генерируем номера задач 1-50
             const taskIndexes = Array.from({length: 50}, (_, i) => i + 1);
 
-            const refHeaders = ['Типы задач', 'Отделы', 'Редирект', 'hreflang', 'Приоритет', 'CMS', 'Да/Нет', '№ задачи', 'Подзадачи'];
+            const refHeaders = ['Типы задач', 'Отделы', 'Редирект', 'hreflang', 'Приоритет', 'CMS', 'Да/Нет', '№ задачи', 'Подзадачи', 'AMP'];
             const headerRow = refSheet.addRow(refHeaders);
             headerRow.eachCell(cell => { Object.assign(cell, headerStyle); });
 
             const maxLen = Math.max(
                 taskTypeNames.length, departments.length, redirects.length,
                 hreflangTemplates.length, priorities.length, cmsList.length, boolValues.length,
-                taskIndexes.length, subtaskNames.length
+                taskIndexes.length, subtaskNames.length, ampValues.length
             );
 
             for (let i = 0; i < maxLen; i++) {
@@ -8902,19 +8975,20 @@ ${hreflangCode}
                     cmsList[i] || '',
                     boolValues[i] || '',
                     taskIndexes[i] || '',
-                    subtaskNames[i] || ''
+                    subtaskNames[i] || '',
+                    ampValues[i] || ''
                 ]);
             }
 
             refSheet.columns = [
-                { width: 25 }, { width: 15 }, { width: 10 }, { width: 25 }, { width: 12 }, { width: 15 }, { width: 10 }, { width: 10 }, { width: 30 }
+                { width: 25 }, { width: 15 }, { width: 10 }, { width: 25 }, { width: 12 }, { width: 15 }, { width: 10 }, { width: 10 }, { width: 30 }, { width: 15 }
             ];
 
             // === ЛИСТ 2: Задачи ===
             const tasksSheet = wb.addWorksheet('Задачи');
 
             const taskHeaders = ['№', 'taskName', 'department', 'domain', 'oldSub', 'redirect', 'newSub', 'toUrl', 'oldUrl', 'alternateDomain', 'hreflang', 'priority', 'cms', 'dmca', 'amp', 'assignee', 'pingRocket', 'notes'];
-            const taskHints = ['1,2,3...', 'Тип задачи', 'Отдел', 'example.com', 'old.example.com', '301/404/-', 'new.example.com', 'URL дропа (301/404)', 'URL для 404', 'alt-domain.com', 'RU/AZ/KZ', 'High/Medium/Low', 'CMS', 'true/false', 'true/false', 'Имя', 'true/false', 'Примечания'];
+            const taskHints = ['1,2,3...', 'Тип задачи', 'Отдел', 'example.com', 'old.example.com', '301/404/-', 'new.example.com', 'URL дропа (301/404)', 'URL для 404', 'alt-domain.com', 'RU/AZ/KZ', 'High/Medium/Low', 'CMS', 'true/false', 'domain/subdomain/both', 'Имя', 'true/false', 'Примечания'];
 
             const taskHeaderRow = tasksSheet.addRow(taskHeaders);
             taskHeaderRow.eachCell(cell => { Object.assign(cell, headerStyle); });
@@ -8942,7 +9016,7 @@ ${hreflangCode}
                         t.priority || '',
                         t.cms || '',
                         t.dmca ? 'true' : 'false',
-                        t.amp ? 'true' : 'false',
+                        t.amp || '',  // v4.6.17: domain/subdomain/both или пусто
                         assigneeIdToName(t.assignee),
                         t.pingRocket ? 'true' : 'false',
                         t.notes || ''
@@ -8964,6 +9038,7 @@ ${hreflangCode}
             const priorityFormula = `'Справочники'!$E$2:$E$${priorities.length + 1}`;
             const cmsFormula = `'Справочники'!$F$2:$F$${cmsList.length + 1}`;
             const boolFormula = `'Справочники'!$G$2:$G$3`;
+            const ampFormula = `'Справочники'!$J$2:$J$${ampValues.length + 1}`;  // v4.6.17: отдельная формула для AMP
 
             // B: taskName
             tasksSheet.dataValidations.add('B3:B1000', {
@@ -8993,9 +9068,9 @@ ${hreflangCode}
             tasksSheet.dataValidations.add('N3:N1000', {
                 type: 'list', allowBlank: true, formulae: [boolFormula]
             });
-            // O: amp
+            // O: amp - v4.6.17: теперь domain/subdomain/both
             tasksSheet.dataValidations.add('O3:O1000', {
-                type: 'list', allowBlank: true, formulae: [boolFormula]
+                type: 'list', allowBlank: true, formulae: [ampFormula]
             });
             // Q: pingRocket
             tasksSheet.dataValidations.add('Q3:Q1000', {
@@ -9169,6 +9244,17 @@ ${hreflangCode}
         attachEventListeners() {
             const root = this.shadowRoot;
 
+            // v4.6.17: Глобальный обработчик для кнопки настроек через делегирование на shadowRoot
+            root.addEventListener('click', (e) => {
+                const settingsBtn = e.target.closest('#open-settings');
+                if (settingsBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔧 Глобальный клик по open-settings');
+                    this.openSettingsModal();
+                }
+            });
+
             // v4.5.5: Крестик скрывает окно, но не прерывает процессы
             root.getElementById('close-dashboard').addEventListener('click', () => {
                 if (this.isProcessing) {
@@ -9201,8 +9287,10 @@ ${hreflangCode}
                     } else if (target.id === 'import-tasks-btn' || target.closest('#import-tasks-btn')) {
                         this.importTasks();
                     } else if (target.id === 'export-tasks-btn' || target.closest('#export-tasks-btn')) {
-                        this.exportTasks();
+                        this.exportTasks(); // Экспорт таблицы (шаблон Excel)
                     } else if (target.id === 'open-settings' || target.closest('#open-settings')) {
+                        // v4.6.17: Кнопка настроек API
+                        console.log('🔧 Клик по open-settings, target:', target.id, target);
                         this.openSettingsModal();
                     } else if (target.id === 'open-history-mass' || target.closest('#open-history-mass')) {
                         this.openAutomationHistoryModal();
@@ -9210,7 +9298,7 @@ ${hreflangCode}
                         this.processAllTasks();
                     // v4.5.0: Кнопка сводки
                     } else if (target.id === 'generate-summary-btn' || target.closest('#generate-summary-btn')) {
-                        this.generateSummaryReport();
+                        this.generateSummaryReport(); // Генерация ТЗ
                     // v4.5.0: Кнопка облачного сохранения
                     } else if (target.id === 'generate-cloud-btn' || target.closest('#generate-cloud-btn')) {
                         this.generateCloudReport();
@@ -9250,7 +9338,23 @@ ${hreflangCode}
             root.getElementById('process-automation').addEventListener('click', () => this.processAutomation());
             root.getElementById('add-subtask').addEventListener('click', () => this.addSubtask());
             root.getElementById('open-subtask-templates').addEventListener('click', () => this.openSubtaskTemplatesModal());
-            root.getElementById('open-settings-single').addEventListener('click', () => this.openSettingsModal());
+            const openSettingsSingleBtn = root.getElementById('open-settings-single');
+            if (openSettingsSingleBtn) {
+                openSettingsSingleBtn.addEventListener('click', () => this.openSettingsModal());
+            }
+            // v4.6.17: Прямой обработчик для кнопки настроек в массовом режиме
+            const openSettingsMassBtn = root.getElementById('open-settings');
+            console.log('🔧 open-settings кнопка найдена:', openSettingsMassBtn);
+            if (openSettingsMassBtn) {
+                openSettingsMassBtn.addEventListener('click', (e) => {
+                    console.log('🔧 Клик по кнопке настроек');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.openSettingsModal();
+                });
+            } else {
+                console.warn('⚠️ Кнопка open-settings не найдена!');
+            }
             root.getElementById('open-history-modal').addEventListener('click', () => this.openAutomationHistoryModal());
             root.getElementById('manage-domains-unified').addEventListener('click', () => this.openUnifiedDomainsModal());
             root.getElementById('manage-history').addEventListener('click', () => this.openSubdomainManagerModal('oldSub'));
@@ -9775,7 +9879,7 @@ ${hreflangCode}
                 priority: root.getElementById('priority').value,
                 cms: root.getElementById('cms').value,
                 dmca: root.getElementById('dmca').checked,
-                amp: root.getElementById('amp').checked,
+                amp: root.getElementById('amp').value,
                 redirect301: root.getElementById('redirect301').checked,
                 redirect404: root.getElementById('redirect404').checked
             };
@@ -10688,12 +10792,15 @@ ID: ${taskData.gid}
         // ===== МЕТОДЫ ДЛЯ РАБОТЫ С ПОДЗАДАЧАМИ =====
 
         openSettingsModal() {
+            console.log('🔧 openSettingsModal вызван');
             const modal = new UnifiedSettingsModal(this.shadowRoot, () => {
                 // После сохранения обновляем селекты
                 this.updateDepartmentSelects();
                 this.updateCmsSelects();
             });
+            console.log('🔧 modal создан:', modal);
             modal.show();
+            console.log('🔧 modal.show() вызван');
         }
 
         updateDepartmentSelects() {
@@ -11493,9 +11600,9 @@ ID: ${taskData.gid}
                             <button class="sm-close" id="sm-close">×</button>
                         </div>
                         <div class="sm-body">
-                            <!-- Текущий поддомен -->
+                            <!-- Новый поддомен -->
                             <div class="sm-section">
-                                <div class="sm-section-title"><span>🆕</span> Текущий поддомен (newSub)</div>
+                                <div class="sm-section-title"><span>🆕</span> Новый поддомен (newSub)</div>
                                 <div class="sm-input-row">
                                     <input type="text" class="sm-input" id="sm-current-input" value="${currentSub}" placeholder="new.example.com">
                                     <button class="sm-btn sm-btn-save" id="sm-save-current">💾 Сохранить</button>
@@ -11589,7 +11696,7 @@ ID: ${taskData.gid}
                     
                     db[siteKey].currentSubdomain = newCurrent;
                     saveSitesDatabase(db);
-                    showToast('Текущий поддомен сохранён!' + (oldCurrent && oldCurrent !== newCurrent ? ' Старый перенесён в историю.' : ''));
+                    showToast('Новый поддомен сохранён!' + (oldCurrent && oldCurrent !== newCurrent ? ' Старый перенесён в историю.' : ''));
 
                     // Обновляем UI истории
                     const oldSubs = db[siteKey].oldSubdomains || [];
@@ -11765,7 +11872,8 @@ ID: ${taskData.gid}
                             if (site && site.department) task.department = site.department;
                             if (site && site.cms) task.cms = site.cms;
                             if (site && site.hreflangTemplate !== undefined) task.templateIndex = site.hreflangTemplate;
-                            if (site && site.hasAMP) task.amp = true;
+                            // v4.6.17: hasAMP конвертируем в новый формат
+                            if (site && site.hasAMP) task.amp = 'both';
                             if (site && site.dmcaDefault) task.dmca = true;
                             // v4.5.9: Новые поля
                             if (site && site.alternateDomain) task.alternateDomain = site.alternateDomain;
@@ -12519,10 +12627,18 @@ ID: ${taskData.gid}
                 .sites-search { width: 250px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; color: #000; background: #fff; }
                 .sites-search::placeholder { color: #888; }
                 .sites-filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 150px; color: #333; background: #fff; }
-                .sites-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #333; }
-                .sites-table th { background: #f8f9fa; padding: 10px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; color: #333; }
-                .sites-table td { padding: 10px 8px; border-bottom: 1px solid #eee; color: #333; }
+                .sites-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #333; table-layout: fixed; }
+                .sites-table th { background: #f8f9fa; padding: 8px 6px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; color: #333; white-space: nowrap; }
+                .sites-table td { padding: 8px 6px; border-bottom: 1px solid #eee; color: #333; overflow: hidden; text-overflow: ellipsis; }
                 .sites-table tr:hover { background: #f8f9fa; }
+                /* v4.6.17: Адаптивные ширины колонок */
+                .sites-table th:nth-child(1), .sites-table td:nth-child(1) { width: 20%; } /* Домен */
+                .sites-table th:nth-child(2), .sites-table td:nth-child(2) { width: 10%; } /* Отдел */
+                .sites-table th:nth-child(3), .sites-table td:nth-child(3) { width: 12%; } /* Подмена */
+                .sites-table th:nth-child(4), .sites-table td:nth-child(4) { width: 15%; } /* URL дропа */
+                .sites-table th:nth-child(5), .sites-table td:nth-child(5) { width: 15%; } /* oldURL */
+                .sites-table th:nth-child(6), .sites-table td:nth-child(6) { width: 10%; } /* Флаги */
+                .sites-table th:nth-child(7), .sites-table td:nth-child(7) { width: 18%; } /* Действия */
                 .sites-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
                 .sites-badge-amp { background: #e3f2fd; color: #1976d2; }
                 .sites-badge-dmca { background: #fff3e0; color: #f57c00; }
@@ -12920,7 +13036,7 @@ ID: ${taskData.gid}
 
             rows.sort((a, b) => a.domain.localeCompare(b.domain));
 
-            let html = '<table class="sites-table"><thead><tr><th>Основной домен</th><th>Отдел</th><th>Текущий поддомен</th><th>Последняя задача</th><th>Действия</th></tr></thead><tbody>';
+            let html = '<table class="sites-table"><thead><tr><th>Основной домен</th><th>Отдел</th><th>Новый поддомен</th><th>Последняя задача</th><th>Действия</th></tr></thead><tbody>';
             rows.forEach(row => {
                 html += `<tr>
                     <td style="font-weight:500;">${row.domain}</td>
@@ -13037,7 +13153,7 @@ ID: ${taskData.gid}
                             <input type="text" class="sites-form-input" id="old-sub-domain" value="${domain}" ${isEdit ? 'disabled' : ''} placeholder="example.com" />
                         </div>
                         <div class="sites-form-group">
-                            <label class="sites-form-label">Старый поддомен *</label>
+                            <label class="sites-form-label">Старый поддомен</label>
                             <input type="text" class="sites-form-input" id="old-sub-url" value="${url}" placeholder="old.example.com" />
                         </div>
                         <div class="sites-form-group">
@@ -13109,7 +13225,7 @@ ID: ${taskData.gid}
                             <input type="text" class="sites-form-input" id="current-sub-domain" value="${domain}" disabled />
                         </div>
                         <div class="sites-form-group">
-                            <label class="sites-form-label">Текущий поддомен</label>
+                            <label class="sites-form-label">Новый поддомен</label>
                             <input type="text" class="sites-form-input" id="current-sub-url" value="${current}" placeholder="new.example.com" />
                         </div>
                     </div>
